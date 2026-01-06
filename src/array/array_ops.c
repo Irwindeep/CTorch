@@ -7,6 +7,37 @@
 #include <stdlib.h>
 
 // array comparators
+bool array_equal(ndArray *arr1, ndArray *arr2) {
+    if (arr1->ndim != arr2->ndim)
+        return false;
+
+    int ndim = arr1->ndim;
+    size_t *idx = malloc(ndim * sizeof(size_t));
+    if (!idx) {
+        printf("Failed to allocate index buffers\n");
+        exit(ARRAY_INIT_FAILURE);
+    }
+
+    size_t total = 1;
+    for (int i = 0; i < ndim; i++) {
+        if (arr1->shape[i] != arr2->shape[i])
+            return false;
+        total *= arr1->shape[i];
+    }
+
+    for (size_t i = 0; i < total; i++) {
+        size_t tmp = i;
+        for (int dim = ndim - 1; dim >= 0; dim--) {
+            idx[dim] = tmp % arr1->shape[dim];
+            tmp /= arr1->shape[dim];
+        }
+        if (get_value(arr1, idx) != get_value(arr2, idx))
+            return false;
+    }
+
+    free(idx);
+    return true;
+}
 
 // array operations
 bool broadcastable(const size_t *shape1, const size_t *shape2, int ndim1,

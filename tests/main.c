@@ -13,6 +13,7 @@ int main() {
     CU_add_test(array_tests, "Populate Array", test_populate_array);
 
     CU_pSuite array_ops = CU_add_suite("ArrayOperationsSuite", 0, 0);
+    CU_add_test(array_ops, "Array Equality", test_array_equal);
     CU_add_test(array_ops, "Matmul", test_matmul);
 
     CU_basic_set_mode(CU_BRM_VERBOSE);
