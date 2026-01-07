@@ -4,6 +4,7 @@
 void test_array_equal();
 void test_array_add();
 void test_array_sub();
+void test_array_mul();
 void test_array_matmul();
 
 #endif // !ARRAY_OPS_TESTS_H

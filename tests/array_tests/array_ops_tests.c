@@ -81,6 +81,32 @@ void test_array_sub() {
     free_array(result);
 }
 
+void test_array_mul() {
+    const size_t shape1[] = {3, 3}, shape2[] = {3}, shape3[] = {3, 3};
+    int ndim1 = sizeof(shape1) / sizeof(shape1[0]),
+        ndim2 = sizeof(shape2) / sizeof(shape2[0]),
+        ndim3 = sizeof(shape3) / sizeof(shape3[0]);
+
+    ndArray *arr1 = array_init(ndim1, shape1, sizeof(float)),
+            *arr2 = array_init(ndim2, shape2, sizeof(float)),
+            *arr3 = array_init(ndim3, shape3, sizeof(float));
+
+    const float data1[] = {1, 0, 0, 0, 1, 0, 0, 0, 1};
+    const float data2[] = {2, 3, 4};
+    const float data3[] = {2, 0, 0, 0, 3, 0, 0, 0, 4};
+    populate_array(arr1, data1);
+    populate_array(arr2, data2);
+    populate_array(arr3, data3);
+
+    ndArray *result = mul(arr1, arr2);
+    CU_ASSERT(array_equal(result, arr3));
+
+    free_array(arr1);
+    free_array(arr2);
+    free_array(arr3);
+    free_array(result);
+}
+
 void test_array_matmul() {
     const size_t shape1[] = {2, 3, 3}, shape2[] = {1, 3, 3},
                  shape3[] = {2, 3, 3};

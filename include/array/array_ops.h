@@ -17,6 +17,7 @@ size_t *broadcast_shape(const size_t *shape1, const size_t *shape2, int ndim1,
                         int ndim2);
 ndArray *add(ndArray *arr1, ndArray *arr2);
 ndArray *sub(ndArray *arr1, ndArray *arr2);
+ndArray *mul(ndArray *arr1, ndArray *arr2);
 ndArray *matmul(ndArray *arr1, ndArray *arr2);
 
 #endif // !ARRAY_OPS_H

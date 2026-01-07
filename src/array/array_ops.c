@@ -181,6 +181,43 @@ ndArray *sub(ndArray *arr1, ndArray *arr2) {
     return result;
 }
 
+ndArray *mul(ndArray *arr1, ndArray *arr2) {
+    int ndim =
+        (get_ndim(arr1) > get_ndim(arr2)) ? get_ndim(arr1) : get_ndim(arr2);
+    size_t *shape = broadcast_shape(get_shape(arr1), get_shape(arr2),
+                                    get_ndim(arr1), get_ndim(arr2));
+    ndArray *result = array_init(ndim, shape, sizeof(float));
+
+    size_t total = 1;
+    for (int i = 0; i < get_ndim(result); i++)
+        total *= get_shape(result)[i];
+
+    size_t *idx1 = malloc(get_ndim(arr1) * sizeof(size_t)),
+           *idx2 = malloc(get_ndim(arr2) * sizeof(size_t)),
+           *idx = malloc(get_ndim(result) * sizeof(size_t));
+
+    if (!idx1 || !idx2 || !idx) {
+        printf("Failed to allocate index buffers\n");
+        exit(ARRAY_INIT_FAILURE);
+    }
+
+    for (size_t b = 0; b < total; b++) {
+        _get_broadcasted_indices(
+            get_shape(arr1), get_shape(arr2), get_shape(result), get_ndim(arr1),
+            get_ndim(arr2), get_ndim(result), idx1, idx2, idx, b);
+
+        float val1 = get_value(arr1, idx1), val2 = get_value(arr2, idx2);
+        set_value(result, idx, val1 * val2);
+    }
+
+    free(shape);
+    free(idx1);
+    free(idx2);
+    free(idx);
+
+    return result;
+}
+
 static void _matmul(ndArray *arr1, ndArray *arr2, ndArray *result, size_t *idx1,
                     size_t *idx2, size_t *idx) {
     size_t m = get_shape(result)[get_ndim(result) - 2],

@@ -19,6 +19,7 @@ int main() {
     CU_add_test(array_ops, "Array Equality", test_array_equal);
     CU_add_test(array_ops, "Array Addition", test_array_add);
     CU_add_test(array_ops, "Array Subtraction", test_array_sub);
+    CU_add_test(array_ops, "Array Multiplication", test_array_mul);
     CU_add_test(array_ops, "Array Matrix Multiplication", test_array_matmul);
 
     CU_basic_set_mode(CU_BRM_NORMAL);
