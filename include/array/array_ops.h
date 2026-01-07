@@ -5,6 +5,8 @@
 #include <stdbool.h>
 #include <stddef.h>
 
+#define TOL 1e-6
+
 // array comparators
 bool array_equal(ndArray *arr1, ndArray *arr2);
 
@@ -14,6 +16,7 @@ bool broadcastable(const size_t *shape1, const size_t *shape2, int ndim1,
 size_t *broadcast_shape(const size_t *shape1, const size_t *shape2, int ndim1,
                         int ndim2);
 ndArray *add(ndArray *arr1, ndArray *arr2);
+ndArray *sub(ndArray *arr1, ndArray *arr2);
 ndArray *matmul(ndArray *arr1, ndArray *arr2);
 
 #endif // !ARRAY_OPS_H

@@ -6,6 +6,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+static float float_abs(float x) { return (x >= 0) ? x : -x; }
+
 // array comparators
 bool array_equal(ndArray *arr1, ndArray *arr2) {
     if (get_ndim(arr1) != get_ndim(arr2))
@@ -27,7 +29,7 @@ bool array_equal(ndArray *arr1, ndArray *arr2) {
             idx[dim] = tmp % get_shape(arr1)[dim];
             tmp /= get_shape(arr1)[dim];
         }
-        if (get_value(arr1, idx) != get_value(arr2, idx))
+        if (float_abs(get_value(arr1, idx) - get_value(arr2, idx)) > TOL)
             return false;
     }
 
@@ -132,6 +134,43 @@ ndArray *add(ndArray *arr1, ndArray *arr2) {
 
         float val1 = get_value(arr1, idx1), val2 = get_value(arr2, idx2);
         set_value(result, idx, val1 + val2);
+    }
+
+    free(shape);
+    free(idx1);
+    free(idx2);
+    free(idx);
+
+    return result;
+}
+
+ndArray *sub(ndArray *arr1, ndArray *arr2) {
+    int ndim =
+        (get_ndim(arr1) > get_ndim(arr2)) ? get_ndim(arr1) : get_ndim(arr2);
+    size_t *shape = broadcast_shape(get_shape(arr1), get_shape(arr2),
+                                    get_ndim(arr1), get_ndim(arr2));
+    ndArray *result = array_init(ndim, shape, sizeof(float));
+
+    size_t total = 1;
+    for (int i = 0; i < get_ndim(result); i++)
+        total *= get_shape(result)[i];
+
+    size_t *idx1 = malloc(get_ndim(arr1) * sizeof(size_t)),
+           *idx2 = malloc(get_ndim(arr2) * sizeof(size_t)),
+           *idx = malloc(get_ndim(result) * sizeof(size_t));
+
+    if (!idx1 || !idx2 || !idx) {
+        printf("Failed to allocate index buffers\n");
+        exit(ARRAY_INIT_FAILURE);
+    }
+
+    for (size_t b = 0; b < total; b++) {
+        _get_broadcasted_indices(
+            get_shape(arr1), get_shape(arr2), get_shape(result), get_ndim(arr1),
+            get_ndim(arr2), get_ndim(result), idx1, idx2, idx, b);
+
+        float val1 = get_value(arr1, idx1), val2 = get_value(arr2, idx2);
+        set_value(result, idx, val1 - val2);
     }
 
     free(shape);

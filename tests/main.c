@@ -17,9 +17,11 @@ int main() {
 
     CU_pSuite array_ops = CU_add_suite("ArrayOperationsSuite", 0, 0);
     CU_add_test(array_ops, "Array Equality", test_array_equal);
-    CU_add_test(array_ops, "Matmul", test_matmul);
+    CU_add_test(array_ops, "Array Addition", test_array_add);
+    CU_add_test(array_ops, "Array Subtraction", test_array_sub);
+    CU_add_test(array_ops, "Array Matrix Multiplication", test_array_matmul);
 
-    CU_basic_set_mode(CU_BRM_VERBOSE);
+    CU_basic_set_mode(CU_BRM_NORMAL);
     CU_basic_run_tests();
     CU_cleanup_registry();
     return 0;
