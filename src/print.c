@@ -1,21 +1,15 @@
 #include "print.h"
+#include "array/array.h"
 
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 static void print_indent(int n) {
     for (int i = 0; i < n; ++i)
         putchar(' ');
-}
-
-static void _print_rec_base_case(const ndArray *array, size_t offset) {
-    const char *base = (char *)array->data + offset;
-
-    float v;
-    memcpy(&v, base, sizeof(float));
-    printf("%g", (double)v);
 }
 
 static int _print_trunc(const ndArray *array, bool truncated, size_t idx,
@@ -26,13 +20,13 @@ static int _print_trunc(const ndArray *array, bool truncated, size_t idx,
         printf("\n");
         print_indent(indent + 2);
         printf("...");
-        idx = array->shape[dim] - PRINT_EDGE_ITEMS;
+        idx = get_shape(array)[dim] - PRINT_EDGE_ITEMS;
     }
 
     if (idx > 0)
         printf(",");
 
-    if (dim < array->ndim - 1) {
+    if (dim < get_ndim(array) - 1) {
         printf("\n");
         print_indent(indent + 2);
     } else
@@ -41,36 +35,33 @@ static int _print_trunc(const ndArray *array, bool truncated, size_t idx,
     return idx;
 }
 
-static void print_rec(const ndArray *array, int dim, size_t offset,
-                      int indent) {
+static void print_rec(const ndArray *array, int dim, size_t *idx, int indent) {
     if (array == NULL) {
         printf("NULL");
         return;
     }
 
-    int ndim = array->ndim;
+    int ndim = get_ndim(array);
     if (ndim == 0 || dim == ndim) {
-        _print_rec_base_case(array, offset);
+        float v = get_value(array, idx);
+        printf("%g", (double)v);
         return;
     }
-
-    size_t dim_len = array->shape[dim];
-    size_t stride = array->strides[dim];
-
+    size_t dim_len = get_shape(array)[dim];
     putchar('[');
 
     bool truncated = dim_len > 2 * PRINT_EDGE_ITEMS + 1;
     for (size_t i = 0; i < dim_len; ++i) {
         i = _print_trunc(array, truncated, i, dim, indent);
-        print_rec(array, dim + 1, offset + i * stride, indent + 2);
+        idx[dim] = i;
+        print_rec(array, dim + 1, idx, indent + 2);
     }
 
     if (dim < ndim - 1 && dim_len > 0) {
         printf("\n");
         print_indent(indent);
-    } else if (dim == ndim - 1 && dim_len > 0) {
+    } else if (dim == ndim - 1 && dim_len > 0)
         putchar(' ');
-    }
 
     putchar(']');
 }
@@ -81,27 +72,35 @@ void print_array(const ndArray *array) {
         return;
     }
 
-    if (array->ndim < 0) {
-        printf("Invalid ndim (%d)\n", array->ndim);
+    if (get_ndim(array) < 0) {
+        printf("Invalid ndim (%d)\n", get_ndim(array));
         return;
     }
 
-    for (int d = 0; d < array->ndim; ++d) {
-        if (array->shape[d] == 0) {
+    size_t *idx = malloc(get_ndim(array) * sizeof(size_t));
+    if (!idx) {
+        printf("Failed to create index buffer\n");
+        exit(ARRAY_INIT_FAILURE);
+    }
+
+    for (int d = 0; d < get_ndim(array); d++) {
+        idx[d] = 0;
+        if (get_shape(array)[d] == 0) {
             printf("[]\n");
             return;
         }
     }
-    print_rec(array, 0, 0, 0);
-    putchar('\n');
+    print_rec(array, 0, idx, 0);
+
+    free(idx);
 }
 
-void print_shape(const ndArray *array, char end) {
-    printf("(");
-    for (int i = 0; i < array->ndim; i++) {
-        printf("%zu", array->shape[i]);
-        if (i < array->ndim - 1)
+void print_shape(const ndArray *array) {
+    putchar('(');
+    for (int i = 0; i < get_ndim(array); i++) {
+        printf("%zu", get_shape(array)[i]);
+        if (i < get_ndim(array) - 1)
             printf(", ");
     }
-    printf(")%c", end);
+    putchar(')');
 }
