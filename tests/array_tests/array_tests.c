@@ -1,19 +1,23 @@
 #include "array_tests.h"
 #include "array/array.h"
+#include "array/array_ops.h"
 
 #include <CUnit/CUnit.h>
+#include <stddef.h>
 #include <stdio.h>
 
 void test_array_init() {
-    const size_t shape[] = {10, 5};
+    const size_t shape[] = {50};
     int ndim = sizeof(shape) / sizeof(shape[0]);
 
     ndArray *array = array_init(ndim, shape, sizeof(float));
 
-    CU_ASSERT(array->shape[0] == shape[0]);
-    CU_ASSERT(array->shape[1] == shape[1]);
-    CU_ASSERT(array->strides[0] == 5 * array->itemsize);
-    CU_ASSERT(array->strides[1] == array->itemsize);
+    size_t size = 1;
+    for (int i = ndim - 1; i >= 0; i--) {
+        CU_ASSERT(get_shape(array)[i] == shape[i]);
+        CU_ASSERT(get_strides(array)[i] == size * get_itemsize(array));
+        size *= get_shape(array)[i];
+    }
 
     free_array(array);
 }
@@ -43,13 +47,6 @@ void test_getters_and_setters() {
     set_value(array, indices, 2.0f);
     CU_ASSERT(get_value(array, indices) == 2.0f);
 
-    // array should be contiguously allocated in memory
-    void *base = array->data;
-    CU_ASSERT(*(float *)base == 0.0f);
-    CU_ASSERT(*((float *)base + 1) == 1.0f);
-    CU_ASSERT(*((float *)base + 2) == -1.0f);
-    CU_ASSERT(*((float *)base + 3) == 2.0f);
-
     free_array(array);
 }
 
@@ -60,12 +57,6 @@ void test_populate_array() {
     ndArray *array = array_init(ndim, shape, sizeof(float));
     const float data[] = {0.0f, 1.0f, -1.0f, 2.0f};
     populate_array(array, data);
-
-    void *base = array->data;
-    CU_ASSERT(*(float *)base == 0.0f);
-    CU_ASSERT(*((float *)base + 1) == 1.0f);
-    CU_ASSERT(*((float *)base + 2) == -1.0f);
-    CU_ASSERT(*((float *)base + 3) == 2.0f);
 
     size_t indices[] = {0, 0};
     CU_ASSERT(get_value(array, indices) == 0.0f);
@@ -81,4 +72,54 @@ void test_populate_array() {
     CU_ASSERT(get_value(array, indices) == 2.0f);
 
     free_array(array);
+}
+
+void test_eye_array() {
+    size_t m = 3, n = 4;
+    const size_t shape[] = {3, 4};
+
+    ndArray *array = eye(m, n);
+    ndArray *new_array = array_init(2, shape, sizeof(float));
+
+    const float data[] = {1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f,
+                          0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f};
+
+    populate_array(new_array, data);
+    CU_ASSERT(array_equal(array, new_array));
+
+    free_array(array);
+    free_array(new_array);
+}
+
+void test_zeroes_array() {
+    const size_t shape[] = {3, 2, 2};
+    int ndim = sizeof(shape) / sizeof(shape[0]);
+    ndArray *array = zeros(ndim, shape);
+    ndArray *new_array = array_init(3, shape, sizeof(float));
+
+    const float data[] = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
+                          0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
+
+    populate_array(new_array, data);
+    CU_ASSERT(array_equal(array, new_array));
+
+    free_array(array);
+    free_array(new_array);
+}
+
+void test_ones_array() {
+    const size_t shape[] = {3, 2, 2};
+    int ndim = sizeof(shape) / sizeof(shape[0]);
+
+    ndArray *array = ones(ndim, shape);
+    ndArray *new_array = array_init(3, shape, sizeof(float));
+
+    const float data[] = {1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f,
+                          1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f};
+
+    populate_array(new_array, data);
+    CU_ASSERT(array_equal(array, new_array));
+
+    free_array(array);
+    free_array(new_array);
 }

@@ -11,6 +11,9 @@ int main() {
     CU_add_test(array_tests, "Array Initialization", test_array_init);
     CU_add_test(array_tests, "Getters and Setters", test_getters_and_setters);
     CU_add_test(array_tests, "Populate Array", test_populate_array);
+    CU_add_test(array_tests, "Identity Array", test_eye_array);
+    CU_add_test(array_tests, "Zeros Array", test_zeroes_array);
+    CU_add_test(array_tests, "Ones Array", test_ones_array);
 
     CU_pSuite array_ops = CU_add_suite("ArrayOperationsSuite", 0, 0);
     CU_add_test(array_ops, "Array Equality", test_array_equal);
