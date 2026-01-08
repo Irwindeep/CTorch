@@ -1,18 +1,18 @@
-#include "array/array_ops.h"
-#include "array/array.h"
+#include "array.h"
 
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 
-static float float_abs(float x) { return (x >= 0) ? x : -x; }
-
 // array comparators
 bool array_equal(ndArray *arr1, ndArray *arr2) {
+    if (get_dtype(arr1) != get_dtype(arr2))
+        return false;
     if (get_ndim(arr1) != get_ndim(arr2))
         return false;
 
+    DType dtype = get_dtype(arr1);
     int ndim = get_ndim(arr1);
     size_t idx[ndim];
 
@@ -29,7 +29,7 @@ bool array_equal(ndArray *arr1, ndArray *arr2) {
             idx[dim] = tmp % get_shape(arr1)[dim];
             tmp /= get_shape(arr1)[dim];
         }
-        if (float_abs(get_value(arr1, idx) - get_value(arr2, idx)) > TOL)
+        if (!array_val_equal(get_value(arr1, idx), get_value(arr2, idx), dtype))
             return false;
     }
 
@@ -110,9 +110,18 @@ static void _get_broadcasted_indices(const size_t *shape1, const size_t *shape2,
 ndArray *add(ndArray *arr1, ndArray *arr2) {
     int ndim =
         (get_ndim(arr1) > get_ndim(arr2)) ? get_ndim(arr1) : get_ndim(arr2);
+
+    DType dtype1 = get_dtype(arr1), dtype2 = get_dtype(arr2), dtype;
+    if (dtype1 != dtype2) {
+        printf("Cannot add arrays with dtypes `%s` and `%s`\n",
+               DTypeNames[dtype1], DTypeNames[dtype2]);
+        exit(INVALID_DTYPE);
+    }
+    dtype = dtype1;
+
     size_t *shape = broadcast_shape(get_shape(arr1), get_shape(arr2),
                                     get_ndim(arr1), get_ndim(arr2));
-    ndArray *result = array_init(ndim, shape, sizeof(float));
+    ndArray *result = array_init(ndim, shape, dtype);
 
     size_t total = 1;
     for (int i = 0; i < get_ndim(result); i++)
@@ -132,8 +141,8 @@ ndArray *add(ndArray *arr1, ndArray *arr2) {
             get_shape(arr1), get_shape(arr2), get_shape(result), get_ndim(arr1),
             get_ndim(arr2), get_ndim(result), idx1, idx2, idx, b);
 
-        float val1 = get_value(arr1, idx1), val2 = get_value(arr2, idx2);
-        set_value(result, idx, val1 + val2);
+        ArrayVal val1 = get_value(arr1, idx1), val2 = get_value(arr2, idx2);
+        set_value(result, idx, array_val_add(val1, val2, dtype));
     }
 
     free(shape);
@@ -147,9 +156,18 @@ ndArray *add(ndArray *arr1, ndArray *arr2) {
 ndArray *sub(ndArray *arr1, ndArray *arr2) {
     int ndim =
         (get_ndim(arr1) > get_ndim(arr2)) ? get_ndim(arr1) : get_ndim(arr2);
+
+    DType dtype1 = get_dtype(arr1), dtype2 = get_dtype(arr2), dtype;
+    if (dtype1 != dtype2) {
+        printf("Cannot subtract arrays with dtypes `%s` and `%s`\n",
+               DTypeNames[dtype1], DTypeNames[dtype2]);
+        exit(INVALID_DTYPE);
+    }
+    dtype = dtype1;
+
     size_t *shape = broadcast_shape(get_shape(arr1), get_shape(arr2),
                                     get_ndim(arr1), get_ndim(arr2));
-    ndArray *result = array_init(ndim, shape, sizeof(float));
+    ndArray *result = array_init(ndim, shape, dtype);
 
     size_t total = 1;
     for (int i = 0; i < get_ndim(result); i++)
@@ -169,8 +187,8 @@ ndArray *sub(ndArray *arr1, ndArray *arr2) {
             get_shape(arr1), get_shape(arr2), get_shape(result), get_ndim(arr1),
             get_ndim(arr2), get_ndim(result), idx1, idx2, idx, b);
 
-        float val1 = get_value(arr1, idx1), val2 = get_value(arr2, idx2);
-        set_value(result, idx, val1 - val2);
+        ArrayVal val1 = get_value(arr1, idx1), val2 = get_value(arr2, idx2);
+        set_value(result, idx, array_val_sub(val1, val2, dtype));
     }
 
     free(shape);
@@ -184,9 +202,18 @@ ndArray *sub(ndArray *arr1, ndArray *arr2) {
 ndArray *mul(ndArray *arr1, ndArray *arr2) {
     int ndim =
         (get_ndim(arr1) > get_ndim(arr2)) ? get_ndim(arr1) : get_ndim(arr2);
+
+    DType dtype1 = get_dtype(arr1), dtype2 = get_dtype(arr2), dtype;
+    if (dtype1 != dtype2) {
+        printf("Cannot multiply arrays with dtypes `%s` and `%s`\n",
+               DTypeNames[dtype1], DTypeNames[dtype2]);
+        exit(INVALID_DTYPE);
+    }
+    dtype = dtype1;
+
     size_t *shape = broadcast_shape(get_shape(arr1), get_shape(arr2),
                                     get_ndim(arr1), get_ndim(arr2));
-    ndArray *result = array_init(ndim, shape, sizeof(float));
+    ndArray *result = array_init(ndim, shape, dtype);
 
     size_t total = 1;
     for (int i = 0; i < get_ndim(result); i++)
@@ -206,8 +233,8 @@ ndArray *mul(ndArray *arr1, ndArray *arr2) {
             get_shape(arr1), get_shape(arr2), get_shape(result), get_ndim(arr1),
             get_ndim(arr2), get_ndim(result), idx1, idx2, idx, b);
 
-        float val1 = get_value(arr1, idx1), val2 = get_value(arr2, idx2);
-        set_value(result, idx, val1 * val2);
+        ArrayVal val1 = get_value(arr1, idx1), val2 = get_value(arr2, idx2);
+        set_value(result, idx, array_val_mul(val1, val2, dtype));
     }
 
     free(shape);
@@ -224,6 +251,7 @@ static void _matmul(ndArray *arr1, ndArray *arr2, ndArray *result, size_t *idx1,
            n = get_shape(result)[get_ndim(result) - 1],
            k = get_shape(arr1)[get_ndim(arr1) - 1];
 
+    DType dtype = get_dtype(result);
     for (size_t i = 0; i < m; i++) {
         idx1[get_ndim(arr1) - 2] = i;
         idx[get_ndim(result) - 2] = i;
@@ -231,15 +259,16 @@ static void _matmul(ndArray *arr1, ndArray *arr2, ndArray *result, size_t *idx1,
             idx2[get_ndim(arr2) - 1] = j;
             idx[get_ndim(result) - 1] = j;
 
-            float sum = 0.0f;
+            ArrayVal sum = array_val_zero(dtype);
             for (size_t p = 0; p < k; p++) {
                 idx1[get_ndim(arr1) - 1] = p;
                 idx2[get_ndim(arr2) - 2] = p;
 
-                float val1 = get_value(arr1, idx1),
-                      val2 = get_value(arr2, idx2);
+                ArrayVal val1 = get_value(arr1, idx1),
+                         val2 = get_value(arr2, idx2);
 
-                sum += val1 * val2;
+                ArrayVal value = array_val_mul(val1, val2, dtype);
+                sum = array_val_add(sum, value, dtype);
             }
             set_value(result, idx, sum);
         }
@@ -284,6 +313,14 @@ ndArray *matmul(ndArray *arr1, ndArray *arr2) {
         exit(INVALID_ARRAY);
     }
 
+    DType dtype1 = get_dtype(arr1), dtype2 = get_dtype(arr2), dtype;
+    if (dtype1 != dtype2) {
+        printf("Cannot matmul arrays with dtypes `%s` and `%s`\n",
+               DTypeNames[dtype1], DTypeNames[dtype2]);
+        exit(INVALID_DTYPE);
+    }
+    dtype = dtype1;
+
     size_t m = get_shape(arr1)[get_ndim(arr1) - 2],
            k1 = get_shape(arr1)[get_ndim(arr1) - 1],
            k2 = get_shape(arr2)[get_ndim(arr2) - 2],
@@ -304,6 +341,7 @@ ndArray *matmul(ndArray *arr1, ndArray *arr2) {
 
     size_t *shape = malloc((batch_ndim + 2) * sizeof(size_t));
     if (!shape) {
+        free(batch_shape);
         printf("Failed to allocate output shape\n");
         exit(ARRAY_INIT_FAILURE);
     }
@@ -315,7 +353,7 @@ ndArray *matmul(ndArray *arr1, ndArray *arr2) {
     shape[batch_ndim] = m;
     shape[batch_ndim + 1] = n;
 
-    ndArray *result = array_init(batch_ndim + 2, shape, sizeof(float));
+    ndArray *result = array_init(batch_ndim + 2, shape, dtype);
     _batch_matmul(arr1, arr2, result);
 
     free(shape);
@@ -323,3 +361,70 @@ ndArray *matmul(ndArray *arr1, ndArray *arr2) {
 
     return result;
 }
+
+static bool _repeated_dims(const int *dims, int ndim) {
+    for (int i = 0; i < ndim; i++) {
+        for (int j = i + 1; j < ndim; j++) {
+            if (dims[i] == dims[j])
+                return true;
+        }
+    }
+    return false;
+}
+
+void transpose(ndArray *array, const int *dims) {
+    size_t *shape = get_shape(array);
+    size_t *strides = get_strides(array);
+    int ndim = get_ndim(array);
+
+    size_t new_shape[ndim], new_strides[ndim];
+
+    if (_repeated_dims(dims, ndim)) {
+        printf("Repeated Array dims\n");
+        exit(REPEATED_ARRAY_DIMS);
+    }
+
+    for (int d = 0; d < ndim; d++) {
+        int dim = dims[d];
+        if (dim > ndim) {
+            printf("Invalid dim - %d\n", dim);
+            exit(INVALID_DIM);
+        }
+
+        new_shape[d] = shape[dim];
+        new_strides[d] = strides[dim];
+    }
+
+    for (int d = 0; d < ndim; d++) {
+        shape[d] = new_shape[d];
+        strides[d] = new_strides[d];
+    }
+};
+
+ArrayVal array_sum(ndArray *array) {
+    int ndim = get_ndim(array);
+    DType dtype = get_dtype(array);
+    size_t total = get_total_size(array);
+
+    const size_t *shape = get_shape(array);
+
+    size_t *indices = malloc(ndim * sizeof(size_t));
+    if (!indices) {
+        printf("Failure to create index buffer\n");
+        exit(ARRAY_INIT_FAILURE);
+    }
+
+    ArrayVal sum = array_val_zero(dtype);
+    for (size_t i = 0; i < total; i++) {
+        size_t tmp = i;
+        for (int d = 0; d < ndim; d++) {
+            indices[d] = tmp % shape[d];
+            tmp /= shape[d];
+        }
+        ArrayVal val = get_value(array, indices);
+        sum = array_val_add(sum, val, dtype);
+    }
+
+    return sum;
+}
+// ndArray *array_sum_dim(ndArray *array, int dim, bool keepdims) {}

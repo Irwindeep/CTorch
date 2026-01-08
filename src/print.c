@@ -1,5 +1,5 @@
 #include "print.h"
-#include "array/array.h"
+#include "array.h"
 
 #include <stdbool.h>
 #include <stddef.h>
@@ -43,8 +43,21 @@ static void print_rec(const ndArray *array, int dim, size_t *idx, int indent) {
 
     int ndim = get_ndim(array);
     if (ndim == 0 || dim == ndim) {
-        float v = get_value(array, idx);
-        printf("%g", (double)v);
+        ArrayVal value = get_value(array, idx);
+        switch (get_dtype(array)) {
+        case DTYPE_INT:
+            printf("%d", value.int_val);
+            break;
+        case DTYPE_FLOAT:
+            printf("%g", (double)value.float_val);
+            break;
+        case DTYPE_DOUBLE:
+            printf("%g", value.double_val);
+            break;
+        case DTYPE_LONG:
+            printf("%ld", value.long_val);
+            break;
+        }
         return;
     }
     size_t dim_len = get_shape(array)[dim];

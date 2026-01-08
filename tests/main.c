@@ -1,4 +1,3 @@
-#include "array_tests/array_ops_tests.h"
 #include "array_tests/array_tests.h"
 
 #include <CUnit/Basic.h>

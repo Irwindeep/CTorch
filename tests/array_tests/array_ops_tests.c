@@ -1,6 +1,5 @@
-#include "array_ops_tests.h"
-#include "array/array.h"
-#include "array/array_ops.h"
+#include "array.h"
+#include "array_tests.h"
 
 #include <CUnit/CUnit.h>
 #include <stddef.h>
@@ -11,18 +10,20 @@ void test_array_equal() {
     int ndim1 = sizeof(shape1) / sizeof(shape1[0]),
         ndim2 = sizeof(shape2) / sizeof(shape2[0]);
 
-    ndArray *arr1 = array_init(ndim1, shape1, sizeof(float)),
-            *arr2 = array_init(ndim2, shape2, sizeof(float));
+    ndArray *arr1 = array_init(ndim1, shape1, DTYPE_INT),
+            *arr2 = array_init(ndim2, shape2, DTYPE_INT);
 
-    const float data1[] = {1, 0, 0, 0, 1, 0, 0, 0, 1};
-    const float data2[] = {1, 0, 0, 0, 1, 0, 0, 0, 1};
+    const int data1[] = {1, 0, 0, 0, 1, 0, 0, 0, 1};
+    const int data2[] = {1, 0, 0, 0, 1, 0, 0, 0, 1};
     populate_array(arr1, data1);
     populate_array(arr2, data2);
 
     CU_ASSERT(array_equal(arr1, arr2));
 
     const size_t idx[] = {0, 0};
-    set_value(arr2, idx, 3);
+    ArrayVal val;
+    val.int_val = 3;
+    set_value(arr2, idx, val);
     CU_ASSERT(!array_equal(arr1, arr2));
 
     free_array(arr1);
@@ -35,13 +36,14 @@ void test_array_add() {
         ndim2 = sizeof(shape2) / sizeof(shape2[0]),
         ndim3 = sizeof(shape3) / sizeof(shape3[0]);
 
-    ndArray *arr1 = array_init(ndim1, shape1, sizeof(float)),
-            *arr2 = array_init(ndim2, shape2, sizeof(float)),
-            *arr3 = array_init(ndim3, shape3, sizeof(float));
+    ndArray *arr1 = array_init(ndim1, shape1, DTYPE_INT),
+            *arr2 = array_init(ndim2, shape2, DTYPE_INT),
+            *arr3 = array_init(ndim3, shape3, DTYPE_INT);
 
-    const float data1[] = {1, 0, 0, 0, 1, 0, 0, 0, 1};
-    const float data2[] = {2, 3, 4};
-    const float data3[] = {3, 3, 4, 2, 4, 4, 2, 3, 5};
+    const int data1[] = {1, 0, 0, 0, 1, 0, 0, 0, 1};
+    const int data2[] = {2, 3, 4};
+    const int data3[] = {3, 3, 4, 2, 4, 4, 2, 3, 5};
+
     populate_array(arr1, data1);
     populate_array(arr2, data2);
     populate_array(arr3, data3);
@@ -61,13 +63,13 @@ void test_array_sub() {
         ndim2 = sizeof(shape2) / sizeof(shape2[0]),
         ndim3 = sizeof(shape3) / sizeof(shape3[0]);
 
-    ndArray *arr1 = array_init(ndim1, shape1, sizeof(float)),
-            *arr2 = array_init(ndim2, shape2, sizeof(float)),
-            *arr3 = array_init(ndim3, shape3, sizeof(float));
+    ndArray *arr1 = array_init(ndim1, shape1, DTYPE_LONG),
+            *arr2 = array_init(ndim2, shape2, DTYPE_LONG),
+            *arr3 = array_init(ndim3, shape3, DTYPE_LONG);
 
-    const float data1[] = {1, 0, 0, 0, 1, 0, 0, 0, 1};
-    const float data2[] = {2, 3, 4};
-    const float data3[] = {-1, -3, -4, -2, -2, -4, -2, -3, -3};
+    const long int data1[] = {1, 0, 0, 0, 1, 0, 0, 0, 1};
+    const long int data2[] = {2, 3, 4};
+    const long int data3[] = {-1, -3, -4, -2, -2, -4, -2, -3, -3};
     populate_array(arr1, data1);
     populate_array(arr2, data2);
     populate_array(arr3, data3);
@@ -87,13 +89,13 @@ void test_array_mul() {
         ndim2 = sizeof(shape2) / sizeof(shape2[0]),
         ndim3 = sizeof(shape3) / sizeof(shape3[0]);
 
-    ndArray *arr1 = array_init(ndim1, shape1, sizeof(float)),
-            *arr2 = array_init(ndim2, shape2, sizeof(float)),
-            *arr3 = array_init(ndim3, shape3, sizeof(float));
+    ndArray *arr1 = array_init(ndim1, shape1, DTYPE_DOUBLE),
+            *arr2 = array_init(ndim2, shape2, DTYPE_DOUBLE),
+            *arr3 = array_init(ndim3, shape3, DTYPE_DOUBLE);
 
-    const float data1[] = {1, 0, 0, 0, 1, 0, 0, 0, 1};
-    const float data2[] = {2, 3, 4};
-    const float data3[] = {2, 0, 0, 0, 3, 0, 0, 0, 4};
+    const double data1[] = {1, 0, 0, 0, 1, 0, 0, 0, 1};
+    const double data2[] = {2, 3, 4};
+    const double data3[] = {2, 0, 0, 0, 3, 0, 0, 0, 4};
     populate_array(arr1, data1);
     populate_array(arr2, data2);
     populate_array(arr3, data3);
@@ -114,9 +116,9 @@ void test_array_matmul() {
         ndim2 = sizeof(shape2) / sizeof(shape2[0]),
         ndim3 = sizeof(shape3) / sizeof(shape3[0]);
 
-    ndArray *arr1 = array_init(ndim1, shape1, sizeof(float)),
-            *arr2 = array_init(ndim2, shape2, sizeof(float)),
-            *arr3 = array_init(ndim3, shape3, sizeof(float));
+    ndArray *arr1 = array_init(ndim1, shape1, DTYPE_FLOAT),
+            *arr2 = array_init(ndim2, shape2, DTYPE_FLOAT),
+            *arr3 = array_init(ndim3, shape3, DTYPE_FLOAT);
 
     const float data1[] = {0.47f, -0.68f, 0.24f,  -1.70f, 0.75f,  -1.53f,
                            0.01f, -0.12f, -0.81f, 2.87f,  -0.60f, 0.47f,

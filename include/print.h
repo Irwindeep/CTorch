@@ -1,7 +1,7 @@
 #ifndef PRINT_H
 #define PRINT_H
 
-#include "array/array.h"
+#include "array.h"
 
 #define PRINT_EDGE_ITEMS 3
 
