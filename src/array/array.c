@@ -179,11 +179,7 @@ ndArray *eye(size_t m, size_t n, DType dtype) {
 
 ndArray *zeros(int ndim, const size_t *shape, DType dtype) {
     ndArray *array = array_init(ndim, shape, dtype);
-    size_t *indices = malloc(ndim * sizeof(size_t));
-    if (!indices) {
-        printf("Failure to create index buffer\n");
-        exit(ARRAY_INIT_FAILURE);
-    }
+    size_t indices[ndim];
 
     ArrayVal zero = array_val_zero(array->dtype);
     size_t total_size = array->total_size;
@@ -192,17 +188,12 @@ ndArray *zeros(int ndim, const size_t *shape, DType dtype) {
         set_value(array, indices, zero);
     }
 
-    free(indices);
     return array;
 }
 
 ndArray *ones(int ndim, const size_t *shape, DType dtype) {
     ndArray *array = array_init(ndim, shape, dtype);
-    size_t *indices = malloc(ndim * sizeof(size_t));
-    if (!indices) {
-        printf("Failure to create index buffer\n");
-        exit(ARRAY_INIT_FAILURE);
-    }
+    size_t indices[ndim];
 
     ArrayVal one = array_val_one(array->dtype);
     size_t total_size = array->total_size;
@@ -211,6 +202,28 @@ ndArray *ones(int ndim, const size_t *shape, DType dtype) {
         set_value(array, indices, one);
     }
 
-    free(indices);
     return array;
+}
+
+bool array_equal(const ndArray *arr1, const ndArray *arr2) {
+    if ((arr1->dtype != arr2->dtype) || arr1->ndim != arr2->ndim)
+        return false;
+
+    DType dtype = arr1->dtype;
+    int ndim = arr1->ndim;
+    size_t idx[ndim];
+
+    for (int i = 0; i < ndim; i++) {
+        if (arr1->shape[i] != arr2->shape[i])
+            return false;
+    }
+
+    size_t total_size = arr1->total_size;
+    for (size_t i = 0; i < total_size; i++) {
+        offset_to_index(i, idx, arr1->shape, ndim);
+        if (!array_val_equal(get_value(arr1, idx), get_value(arr2, idx), dtype))
+            return false;
+    }
+
+    return true;
 }

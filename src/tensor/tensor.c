@@ -40,6 +40,16 @@ void free_tensor(Tensor *tensor) {
     free(tensor);
 }
 
+ndArray *get_tensor_data(const Tensor *tensor) { return tensor->data; }
+
+ndArray *get_tensor_grad(const Tensor *tensor) {
+    if (!tensor->requires_grad) {
+        printf("Cannot have gradient for non-requires_grad Tensor.\n");
+        exit(INVALID_GRAD);
+    }
+    return tensor->grad;
+}
+
 void zero_grad(Tensor *tensor) {
     int ndim = get_ndim(tensor->data);
     size_t *shape = get_shape(tensor->data);

@@ -67,13 +67,18 @@ ndArray *zeros(int ndim, const size_t *shape, DType dtype);
 ndArray *ones(int ndim, const size_t *shape, DType dtype);
 
 // array comparators
-bool array_equal(ndArray *arr1, ndArray *arr2);
+bool array_equal(const ndArray *arr1, const ndArray *arr2);
 
 // array operations
 bool broadcastable(const size_t *shape1, const size_t *shape2, int ndim1,
                    int ndim2);
 size_t *broadcast_shape(const size_t *shape1, const size_t *shape2, int ndim1,
                         int ndim2);
+void get_broadcasted_indices(const size_t *shape1, const size_t *shape2,
+                             const size_t *shape, int ndim1, int ndim2,
+                             int ndim, size_t *idx1, size_t *idx2, size_t *idx,
+                             size_t batch);
+
 ndArray *add(ndArray *arr1, ndArray *arr2);
 ndArray *sub(ndArray *arr1, ndArray *arr2);
 ndArray *mul(ndArray *arr1, ndArray *arr2);

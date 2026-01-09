@@ -23,6 +23,9 @@ void set_dependency_ctx(Dependency *dep, void *ctx);
 Tensor *tensor_init(ndArray *data, bool requires_grad);
 void free_tensor(Tensor *tensor);
 
+ndArray *get_tensor_data(const Tensor *tensor);
+ndArray *get_tensor_grad(const Tensor *tensor);
+
 void zero_grad(Tensor *tensor);
 void backward(Tensor *tensor, ndArray *grad);
 
