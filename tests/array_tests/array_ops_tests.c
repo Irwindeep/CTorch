@@ -1,5 +1,6 @@
 #include "array.h"
 #include "array_tests.h"
+#include "print.h"
 
 #include <CUnit/CUnit.h>
 #include <stddef.h>
@@ -140,4 +141,72 @@ void test_array_matmul() {
     free_array(arr2);
     free_array(arr3);
     free_array(result);
+}
+
+void test_array_transpose() {
+    const size_t shape[] = {2, 3, 3};
+    int ndim = sizeof(shape) / sizeof(shape[0]);
+    const float data[] = {0.3140f,  0.1307f,  0.0120f,  -0.8602f, 0.2899f,
+                          0.3697f,  -1.0138f, -0.1979f, 0.2890f,  -1.8322f,
+                          -1.5453f, 0.0210f,  1.5252f,  0.3432f,  -0.2774f,
+                          -1.7862f, -0.7817f, 0.1935f};
+
+    ndArray *array = array_init(ndim, shape, DTYPE_FLOAT);
+    populate_array(array, data);
+
+    transpose(array, (int[]){1, 2, 0});
+    ndArray *array_T = array_init(ndim, (size_t[]){3, 3, 2}, DTYPE_FLOAT);
+    const float data1[] = {0.3140f,  -1.8322f, 0.1307f,  -1.5453f, 0.0120f,
+                           0.0210f,  -0.8602f, 1.5252f,  0.2899f,  0.3432f,
+                           0.3697f,  -0.2774f, -1.0138f, -1.7862f, -0.1979f,
+                           -0.7817f, 0.2890f,  0.1935f};
+    populate_array(array_T, data1);
+
+    CU_ASSERT(array_equal(array, array_T));
+    free_array(array);
+    free_array(array_T);
+}
+
+void test_array_sum() {
+    const size_t shape[] = {2, 3, 3};
+    int ndim = sizeof(shape) / sizeof(shape[0]);
+    const float data[] = {0.3140f,  0.1307f,  0.0120f,  -0.8602f, 0.2899f,
+                          0.3697f,  -1.0138f, -0.1979f, 0.2890f,  -1.8322f,
+                          -1.5453f, 0.0210f,  1.5252f,  0.3432f,  -0.2774f,
+                          -1.7862f, -0.7817f, 0.1935f};
+
+    ndArray *array = array_init(ndim, shape, DTYPE_FLOAT);
+    populate_array(array, data);
+
+    ndArray *arr_sum = array_sum(array);
+    ndArray *truth_arr = array_init(0, (size_t[]){}, DTYPE_FLOAT);
+    populate_array(truth_arr, (float[]){-4.8065f});
+    CU_ASSERT(array_equal(arr_sum, truth_arr));
+
+    free_array(array);
+    free_array(arr_sum);
+    free_array(truth_arr);
+}
+
+void test_array_sum_dim() {
+    const size_t shape[] = {2, 3, 3};
+    int ndim = sizeof(shape) / sizeof(shape[0]);
+    const float data[] = {0.3140f,  0.1307f,  0.0120f,  -0.8602f, 0.2899f,
+                          0.3697f,  -1.0138f, -0.1979f, 0.2890f,  -1.8322f,
+                          -1.5453f, 0.0210f,  1.5252f,  0.3432f,  -0.2774f,
+                          -1.7862f, -0.7817f, 0.1935f};
+
+    ndArray *array = array_init(ndim, shape, DTYPE_FLOAT);
+    populate_array(array, data);
+
+    ndArray *arr_sum = array_sum_dim(array, 1, true);
+    ndArray *truth_arr = array_init(ndim, (size_t[]){2, 1, 3}, DTYPE_FLOAT);
+    const float data1[] = {-1.5600f, 0.2227f,  0.6707f,
+                           -2.0932f, -1.9838f, -0.0629f};
+    populate_array(truth_arr, data1);
+    CU_ASSERT(array_equal(arr_sum, truth_arr));
+
+    free_array(array);
+    free_array(arr_sum);
+    free_array(truth_arr);
 }
