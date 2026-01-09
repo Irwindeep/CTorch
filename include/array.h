@@ -59,6 +59,7 @@ ArrayVal get_value(const ndArray *array, const size_t *indices);
 void set_value(ndArray *array, const size_t *indices, ArrayVal value);
 
 void populate_array(ndArray *array, const void *data);
+void offset_to_index(size_t offset, size_t *idx, const size_t *shape, int ndim);
 
 // some important arrays
 ndArray *eye(size_t m, size_t n, DType dtype);

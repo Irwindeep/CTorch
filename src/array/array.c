@@ -150,6 +150,14 @@ void populate_array(ndArray *array, const void *data) {
     memcpy(array->data, data, array->total_size * array->itemsize);
 }
 
+void offset_to_index(size_t offset, size_t *idx, const size_t *shape,
+                     int ndim) {
+    for (int d = 0; d < ndim; d++) {
+        idx[d] = offset % shape[d];
+        offset /= shape[d];
+    }
+}
+
 // some important arrays
 ndArray *eye(size_t m, size_t n, DType dtype) {
     const size_t shape[] = {m, n};
@@ -178,17 +186,9 @@ ndArray *zeros(int ndim, const size_t *shape, DType dtype) {
     }
 
     ArrayVal zero = array_val_zero(array->dtype);
-
-    size_t total = 1;
-    for (int i = 0; i < ndim; i++)
-        total *= shape[i];
-
-    for (size_t i = 0; i < total; i++) {
-        size_t tmp = i;
-        for (int d = 0; d < ndim; d++) {
-            indices[d] = tmp % shape[d];
-            tmp /= shape[d];
-        }
+    size_t total_size = array->total_size;
+    for (size_t i = 0; i < total_size; i++) {
+        offset_to_index(i, indices, shape, ndim);
         set_value(array, indices, zero);
     }
 
@@ -205,17 +205,9 @@ ndArray *ones(int ndim, const size_t *shape, DType dtype) {
     }
 
     ArrayVal one = array_val_one(array->dtype);
-
-    size_t total = 1;
-    for (int i = 0; i < ndim; i++)
-        total *= shape[i];
-
-    for (size_t i = 0; i < total; i++) {
-        size_t tmp = i;
-        for (int d = 0; d < ndim; d++) {
-            indices[d] = tmp % shape[d];
-            tmp /= shape[d];
-        }
+    size_t total_size = array->total_size;
+    for (size_t i = 0; i < total_size; i++) {
+        offset_to_index(i, indices, shape, ndim);
         set_value(array, indices, one);
     }
 

@@ -427,4 +427,54 @@ ArrayVal array_sum(ndArray *array) {
 
     return sum;
 }
-// ndArray *array_sum_dim(ndArray *array, int dim, bool keepdims) {}
+
+ndArray *array_sum_dim(ndArray *array, int dim, bool keepdims) {
+    int ndim = get_ndim(array);
+    const size_t *shape = get_shape(array);
+    DType dtype = get_dtype(array);
+
+    int new_ndim = keepdims ? ndim : ndim - 1;
+
+    size_t *new_shape = malloc(new_ndim * sizeof(size_t)),
+           *in_idx = malloc(ndim * sizeof(size_t)),
+           *out_idx = malloc(new_ndim * sizeof(size_t));
+    if (!new_shape || !in_idx || !out_idx) {
+        printf("Failure to create new array\n");
+        exit(ARRAY_INIT_FAILURE);
+    }
+    int j = 0;
+    for (int i = 0; i < ndim; i++) {
+        if (i == dim) {
+            if (keepdims)
+                new_shape[j++] = 1;
+            continue;
+        }
+        new_shape[j++] = shape[i];
+    }
+
+    ndArray *result = zeros(new_ndim, new_shape, dtype);
+
+    size_t total = get_total_size(array);
+    for (size_t i = 0; i < total; i++) {
+        offset_to_index(i, in_idx, shape, ndim);
+
+        int oi = 0;
+        for (int ii = 0; ii < ndim; ii++) {
+            if (ii == dim) {
+                if (keepdims)
+                    out_idx[oi++] = 0;
+                continue;
+            }
+            out_idx[oi++] = in_idx[ii];
+        }
+
+        ArrayVal v = get_value(array, in_idx);
+        ArrayVal acc = get_value(result, out_idx);
+        set_value(result, out_idx, array_val_add(v, acc, dtype));
+    }
+
+    free(new_shape);
+    free(in_idx);
+    free(out_idx);
+    return result;
+}
