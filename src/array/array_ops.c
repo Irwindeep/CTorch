@@ -401,7 +401,7 @@ void transpose(ndArray *array, const int *dims) {
     }
 };
 
-ArrayVal array_sum(ndArray *array) {
+ndArray *array_sum(ndArray *array) {
     int ndim = get_ndim(array);
     DType dtype = get_dtype(array);
     size_t total = get_total_size(array);
@@ -425,7 +425,11 @@ ArrayVal array_sum(ndArray *array) {
         sum = array_val_add(sum, val, dtype);
     }
 
-    return sum;
+    ndArray *result = array_init(0, (size_t[]){}, dtype);
+    set_value(result, (size_t[]){}, sum);
+
+    free(indices);
+    return result;
 }
 
 ndArray *array_sum_dim(ndArray *array, int dim, bool keepdims) {
