@@ -28,6 +28,7 @@ Tensor *tensor_init(ndArray *data, bool requires_grad) {
 
     tensor->dependency_arr = NULL;
     tensor->dependency_cnt = 0;
+    tensor->requires_grad = requires_grad;
 
     return tensor;
 }
@@ -36,18 +37,40 @@ void free_tensor(Tensor *tensor) {
     free_array(tensor->data);
     if (tensor->grad)
         free_array(tensor->grad);
-    free(tensor->dependency_arr);
+    if (tensor->dependency_arr) {
+        for (size_t i = 0; i < tensor->dependency_cnt; i++)
+            free_dependency(tensor->dependency_arr[i]);
+        free(tensor->dependency_arr);
+    }
     free(tensor);
 }
 
 ndArray *get_tensor_data(const Tensor *tensor) { return tensor->data; }
-
 ndArray *get_tensor_grad(const Tensor *tensor) {
     if (!tensor->requires_grad) {
         printf("Cannot have gradient for non-requires_grad Tensor.\n");
         exit(INVALID_GRAD);
     }
     return tensor->grad;
+}
+bool get_requires_grad(const Tensor *tensor) { return tensor->requires_grad; }
+size_t get_dependency_cnt(const Tensor *tensor) {
+    return tensor->dependency_cnt;
+}
+
+int get_tensor_ndim(const Tensor *tensor) { return get_ndim(tensor->data); }
+size_t *get_tensor_shape(const Tensor *tensor) {
+    return get_shape(tensor->data);
+}
+
+void set_requires_grad(Tensor *tensor, bool requires_grad) {
+    tensor->requires_grad = requires_grad;
+}
+
+void set_dependency_arr(Tensor *tensor, Dependency **dependency_arr,
+                        size_t dependency_cnt) {
+    tensor->dependency_cnt = dependency_cnt;
+    tensor->dependency_arr = dependency_arr;
 }
 
 void zero_grad(Tensor *tensor) {
@@ -76,7 +99,7 @@ void backward(Tensor *tensor, ndArray *grad) {
         Tensor *dep_tensor = get_dependency_tensor(dep);
         gradFn grad_fn = get_dependency_grad_fn(dep);
 
-        ndArray *backward_grad = grad_fn(tensor->grad);
+        ndArray *backward_grad = grad_fn(tensor->grad, get_dependency_ctx(dep));
         backward(dep_tensor, backward_grad);
     }
 }
