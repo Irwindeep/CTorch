@@ -84,6 +84,7 @@ ndArray *array_add(ndArray *arr1, ndArray *arr2);
 ndArray *array_sub(ndArray *arr1, ndArray *arr2);
 ndArray *array_mul(ndArray *arr1, ndArray *arr2);
 ndArray *array_div(ndArray *arr1, ndArray *arr2);
+
 ndArray *negative(ndArray *array);
 ndArray *inverse(ndArray *array);
 ndArray *matmul(ndArray *arr1, ndArray *arr2);
@@ -91,5 +92,15 @@ ndArray *matmul(ndArray *arr1, ndArray *arr2);
 void transpose(ndArray *array, const int *dims);
 ndArray *array_sum(ndArray *array);
 ndArray *array_sum_dim(ndArray *array, int dim, bool keepdims);
+
+void array_addi(ndArray **arr1, ndArray *arr2);
+void array_subi(ndArray **arr1, ndArray *arr2);
+void array_muli(ndArray **arr1, ndArray *arr2);
+void array_divi(ndArray **arr1, ndArray *arr2);
+void array_sumi(ndArray **array);
+void array_sum_dimi(ndArray **array, int dim, bool keepdims);
+
+void negativei(ndArray **array);
+void inversei(ndArray **array);
 
 #endif // !ARRAY_H

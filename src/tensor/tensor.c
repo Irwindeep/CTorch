@@ -1,10 +1,17 @@
 #include "tensor.h"
 #include "array.h"
+#include "autograd.h"
 
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
+
+const char *CtxNames[] = {
+    "DEFAULT_CTX_TYPE",
+    "SINGLE_TENSOR_CTX",
+    "TWO_TENSOR_CTX",
+};
 
 struct Tensor {
     ndArray *data;
@@ -12,6 +19,8 @@ struct Tensor {
     Dependency **dependency_arr;
     size_t dependency_cnt;
     bool requires_grad;
+    void *ctx;
+    CtxType ctx_type;
 };
 
 Tensor *tensor_init(ndArray *data, bool requires_grad) {
@@ -29,19 +38,21 @@ Tensor *tensor_init(ndArray *data, bool requires_grad) {
     tensor->dependency_arr = NULL;
     tensor->dependency_cnt = 0;
     tensor->requires_grad = requires_grad;
+    tensor->ctx = NULL;
+    tensor->ctx_type = DEFAULT_CTX_TYPE;
 
     return tensor;
 }
 
 void free_tensor(Tensor *tensor) {
     free_array(tensor->data);
-    if (tensor->grad)
-        free_array(tensor->grad);
+    free_array(tensor->grad);
     if (tensor->dependency_arr) {
         for (size_t i = 0; i < tensor->dependency_cnt; i++)
             free_dependency(tensor->dependency_arr[i]);
         free(tensor->dependency_arr);
     }
+    free_context(tensor->ctx, tensor->ctx_type);
     free(tensor);
 }
 
@@ -62,6 +73,8 @@ int get_tensor_ndim(const Tensor *tensor) { return get_ndim(tensor->data); }
 size_t *get_tensor_shape(const Tensor *tensor) {
     return get_shape(tensor->data);
 }
+void *get_tensor_ctx(const Tensor *tensor) { return tensor->ctx; }
+CtxType get_tensor_ctx_type(const Tensor *tensor) { return tensor->ctx_type; }
 
 void set_requires_grad(Tensor *tensor, bool requires_grad) {
     tensor->requires_grad = requires_grad;
@@ -71,6 +84,10 @@ void set_dependency_arr(Tensor *tensor, Dependency **dependency_arr,
                         size_t dependency_cnt) {
     tensor->dependency_cnt = dependency_cnt;
     tensor->dependency_arr = dependency_arr;
+}
+void set_tensor_ctx(Tensor *tensor, void *ctx, CtxType ctx_type) {
+    tensor->ctx = ctx;
+    tensor->ctx_type = ctx_type;
 }
 
 void zero_grad(Tensor *tensor) {
@@ -93,13 +110,15 @@ void backward(Tensor *tensor, ndArray *grad) {
         grad = ones(0, (size_t[]){}, get_dtype(tensor->data));
     }
 
-    tensor->grad = add(tensor->grad, grad);
+    array_addi(&tensor->grad, grad);
     for (size_t i = 0; i < tensor->dependency_cnt; i++) {
         Dependency *dep = tensor->dependency_arr[i];
         Tensor *dep_tensor = get_dependency_tensor(dep);
         gradFn grad_fn = get_dependency_grad_fn(dep);
 
-        ndArray *backward_grad = grad_fn(tensor->grad, get_dependency_ctx(dep));
+        ndArray *backward_grad = grad_fn(tensor->grad, tensor->ctx);
         backward(dep_tensor, backward_grad);
     }
+
+    free_array(grad);
 }
