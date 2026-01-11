@@ -123,7 +123,8 @@ void print_tensor(const Tensor *tensor) {
     const ndArray *data = get_tensor_data(tensor);
     printf("Tensor(");
     print_array(data);
-    printf("requires_grad=%s)", (get_requires_grad(tensor)) ? "True" : "False");
+    printf(", requires_grad=%s)",
+           (get_requires_grad(tensor)) ? "True" : "False");
 }
 
 void print_tensor_shape(const Tensor *tensor) {

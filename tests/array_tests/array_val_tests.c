@@ -66,6 +66,19 @@ void test_array_val_div() {
     CU_ASSERT(result.long_val == v1.long_val / v2.long_val);
 }
 
+void test_array_val_neg() {
+    ArrayVal v;
+
+    v.int_val = 4;
+    CU_ASSERT(array_val_neg(v, DTYPE_INT).int_val == -4);
+    v.float_val = 4.0f;
+    CU_ASSERT(array_val_neg(v, DTYPE_FLOAT).float_val == -4.0f);
+    v.double_val = 4.0;
+    CU_ASSERT(array_val_neg(v, DTYPE_DOUBLE).double_val == -4.0);
+    v.long_val = 4;
+    CU_ASSERT(array_val_neg(v, DTYPE_LONG).long_val == -4);
+}
+
 void test_array_val_equal() {
     ArrayVal v1, v2;
     v1.float_val = 1.0f;

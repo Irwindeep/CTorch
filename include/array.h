@@ -38,6 +38,7 @@ ArrayVal array_val_add(ArrayVal v1, ArrayVal v2, DType dtype);
 ArrayVal array_val_sub(ArrayVal v1, ArrayVal v2, DType dtype);
 ArrayVal array_val_mul(ArrayVal v1, ArrayVal v2, DType dtype);
 ArrayVal array_val_div(ArrayVal v1, ArrayVal v2, DType dtype);
+ArrayVal array_val_neg(ArrayVal value, DType dtype);
 
 bool array_val_equal(ArrayVal v1, ArrayVal v2, DType dtype);
 
@@ -79,9 +80,12 @@ void get_broadcasted_indices(const size_t *shape1, const size_t *shape2,
                              int ndim, size_t *idx1, size_t *idx2, size_t *idx,
                              size_t batch);
 
-ndArray *add(ndArray *arr1, ndArray *arr2);
-ndArray *sub(ndArray *arr1, ndArray *arr2);
-ndArray *mul(ndArray *arr1, ndArray *arr2);
+ndArray *array_add(ndArray *arr1, ndArray *arr2);
+ndArray *array_sub(ndArray *arr1, ndArray *arr2);
+ndArray *array_mul(ndArray *arr1, ndArray *arr2);
+ndArray *array_div(ndArray *arr1, ndArray *arr2);
+ndArray *negative(ndArray *array);
+ndArray *inverse(ndArray *array);
 ndArray *matmul(ndArray *arr1, ndArray *arr2);
 
 void transpose(ndArray *array, const int *dims);

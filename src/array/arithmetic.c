@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-ndArray *add(ndArray *arr1, ndArray *arr2) {
+ndArray *array_add(ndArray *arr1, ndArray *arr2) {
     int ndim1 = get_ndim(arr1), ndim2 = get_ndim(arr2);
     int ndim = (ndim1 > ndim2) ? ndim1 : ndim2;
 
@@ -35,13 +35,13 @@ ndArray *add(ndArray *arr1, ndArray *arr2) {
     return result;
 }
 
-ndArray *sub(ndArray *arr1, ndArray *arr2) {
+ndArray *array_sub(ndArray *arr1, ndArray *arr2) {
     int ndim1 = get_ndim(arr1), ndim2 = get_ndim(arr2);
     int ndim = (ndim1 > ndim2) ? ndim1 : ndim2;
 
     DType dtype1 = get_dtype(arr1), dtype2 = get_dtype(arr2), dtype;
     if (dtype1 != dtype2) {
-        printf("Cannot add arrays with dtypes `%s` and `%s`\n",
+        printf("Cannot subtract arrays with dtypes `%s` and `%s`\n",
                DTypeNames[dtype1], DTypeNames[dtype2]);
         exit(INVALID_DTYPE);
     }
@@ -66,13 +66,13 @@ ndArray *sub(ndArray *arr1, ndArray *arr2) {
     return result;
 }
 
-ndArray *mul(ndArray *arr1, ndArray *arr2) {
+ndArray *array_mul(ndArray *arr1, ndArray *arr2) {
     int ndim1 = get_ndim(arr1), ndim2 = get_ndim(arr2);
     int ndim = (ndim1 > ndim2) ? ndim1 : ndim2;
 
     DType dtype1 = get_dtype(arr1), dtype2 = get_dtype(arr2), dtype;
     if (dtype1 != dtype2) {
-        printf("Cannot add arrays with dtypes `%s` and `%s`\n",
+        printf("Cannot multiply arrays with dtypes `%s` and `%s`\n",
                DTypeNames[dtype1], DTypeNames[dtype2]);
         exit(INVALID_DTYPE);
     }
@@ -93,6 +93,60 @@ ndArray *mul(ndArray *arr1, ndArray *arr2) {
     }
 
     free(shape);
+    return result;
+}
+
+ndArray *array_div(ndArray *arr1, ndArray *arr2) {
+    int ndim1 = get_ndim(arr1), ndim2 = get_ndim(arr2);
+    int ndim = (ndim1 > ndim2) ? ndim1 : ndim2;
+
+    DType dtype1 = get_dtype(arr1), dtype2 = get_dtype(arr2), dtype;
+    if (dtype1 != dtype2) {
+        printf("Cannot divide arrays with dtypes `%s` and `%s`\n",
+               DTypeNames[dtype1], DTypeNames[dtype2]);
+        exit(INVALID_DTYPE);
+    }
+    dtype = dtype1;
+
+    size_t *shape1 = get_shape(arr1), *shape2 = get_shape(arr2);
+    size_t *shape = broadcast_shape(shape1, shape2, ndim1, ndim2);
+
+    ndArray *result = array_init(ndim, shape, dtype);
+
+    size_t total_size = get_total_size(result);
+    size_t idx1[ndim1], idx2[ndim2], idx[ndim];
+    for (size_t b = 0; b < total_size; b++) {
+        get_broadcasted_indices(shape1, shape2, shape, ndim1, ndim2, ndim, idx1,
+                                idx2, idx, b);
+        ArrayVal val1 = get_value(arr1, idx1), val2 = get_value(arr2, idx2);
+        set_value(result, idx, array_val_div(val1, val2, dtype));
+    }
+
+    free(shape);
+    return result;
+}
+
+ndArray *negative(ndArray *array) {
+    size_t *shape = get_shape(array);
+    int ndim = get_ndim(array);
+    DType dtype = get_dtype(array);
+
+    ndArray *zeros_arr = zeros(ndim, shape, dtype);
+    ndArray *result = array_sub(zeros_arr, array);
+
+    free_array(zeros_arr);
+    return result;
+}
+
+ndArray *inverse(ndArray *array) {
+    size_t *shape = get_shape(array);
+    int ndim = get_ndim(array);
+    DType dtype = get_dtype(array);
+
+    ndArray *ones_arr = ones(ndim, shape, dtype);
+    ndArray *result = array_div(ones_arr, array);
+
+    free_array(ones_arr);
     return result;
 }
 

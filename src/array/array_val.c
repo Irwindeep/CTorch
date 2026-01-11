@@ -1,4 +1,5 @@
 #include "array.h"
+#include <stdio.h>
 
 ArrayVal array_val_one(DType dtype) {
     ArrayVal value;
@@ -110,15 +111,23 @@ ArrayVal array_val_div(ArrayVal v1, ArrayVal v2, DType dtype) {
 
     switch (dtype) {
     case DTYPE_INT:
+        if (v2.int_val == 0)
+            printf("Invalid value (0) encountered in division\n");
         value.int_val = v1.int_val / v2.int_val;
         break;
     case DTYPE_FLOAT:
+        if (v2.float_val == 0)
+            printf("Invalid value (0) encountered in division\n");
         value.float_val = v1.float_val / v2.float_val;
         break;
     case DTYPE_DOUBLE:
+        if (v2.double_val == 0)
+            printf("Invalid value (0) encountered in division\n");
         value.double_val = v1.double_val / v2.double_val;
         break;
     case DTYPE_LONG:
+        if (v2.long_val == 0)
+            printf("Invalid value (0) encountered in division\n");
         value.long_val = v1.long_val / v2.long_val;
         break;
     }
@@ -148,4 +157,24 @@ bool array_val_equal(ArrayVal v1, ArrayVal v2, DType dtype) {
     }
 
     return is_equal;
+}
+
+ArrayVal array_val_neg(ArrayVal value, DType dtype) {
+    ArrayVal result;
+    switch (dtype) {
+    case DTYPE_INT:
+        result.int_val = -value.int_val;
+        break;
+    case DTYPE_FLOAT:
+        result.float_val = -value.float_val;
+        break;
+    case DTYPE_DOUBLE:
+        result.double_val = -value.double_val;
+        break;
+    case DTYPE_LONG:
+        result.long_val = -value.long_val;
+        break;
+    }
+
+    return result;
 }

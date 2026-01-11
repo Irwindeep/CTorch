@@ -8,6 +8,7 @@ void test_array_val_add();
 void test_array_val_sub();
 void test_array_val_mul();
 void test_array_val_div();
+void test_array_val_neg();
 void test_array_val_equal();
 
 // array tests
@@ -23,6 +24,8 @@ void test_array_equal();
 void test_array_add();
 void test_array_sub();
 void test_array_mul();
+void test_array_div();
+void test_array_neg();
 void test_array_matmul();
 void test_array_transpose();
 void test_array_sum();

@@ -48,7 +48,7 @@ void test_array_add() {
     populate_array(arr2, data2);
     populate_array(arr3, data3);
 
-    ndArray *result = add(arr1, arr2);
+    ndArray *result = array_add(arr1, arr2);
     CU_ASSERT(array_equal(result, arr3));
 
     free_array(arr1);
@@ -74,7 +74,7 @@ void test_array_sub() {
     populate_array(arr2, data2);
     populate_array(arr3, data3);
 
-    ndArray *result = sub(arr1, arr2);
+    ndArray *result = array_sub(arr1, arr2);
     CU_ASSERT(array_equal(result, arr3));
 
     free_array(arr1);
@@ -100,13 +100,56 @@ void test_array_mul() {
     populate_array(arr2, data2);
     populate_array(arr3, data3);
 
-    ndArray *result = mul(arr1, arr2);
+    ndArray *result = array_mul(arr1, arr2);
     CU_ASSERT(array_equal(result, arr3));
 
     free_array(arr1);
     free_array(arr2);
     free_array(arr3);
     free_array(result);
+}
+
+void test_array_div() {
+    const size_t shape1[] = {3, 3}, shape2[] = {3}, shape3[] = {3, 3};
+    int ndim1 = sizeof(shape1) / sizeof(shape1[0]),
+        ndim2 = sizeof(shape2) / sizeof(shape2[0]),
+        ndim3 = sizeof(shape3) / sizeof(shape3[0]);
+
+    ndArray *arr1 = array_init(ndim1, shape1, DTYPE_DOUBLE),
+            *arr2 = array_init(ndim2, shape2, DTYPE_DOUBLE),
+            *arr3 = array_init(ndim3, shape3, DTYPE_DOUBLE);
+
+    const double data1[] = {1, 0, 0, 0, 1, 0, 0, 0, 1};
+    const double data2[] = {2, 3, 4};
+    const double data3[] = {0.5, 0, 0, 0, 1.0 / 3.0, 0, 0, 0, 0.25};
+    populate_array(arr1, data1);
+    populate_array(arr2, data2);
+    populate_array(arr3, data3);
+
+    ndArray *result = array_div(arr1, arr2);
+    CU_ASSERT(array_equal(result, arr3));
+
+    free_array(arr1);
+    free_array(arr2);
+    free_array(arr3);
+    free_array(result);
+}
+
+void test_array_neg() {
+    int ndim = 2;
+    const size_t shape[] = {3, 4};
+    ndArray *array = ones(ndim, shape, DTYPE_FLOAT);
+
+    ndArray *arr_truth = array_init(ndim, shape, DTYPE_FLOAT);
+    const float data[] = {-1.0f, -1.0f, -1.0f, -1.0f, -1.0f, -1.0f,
+                          -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, -1.0f};
+    populate_array(arr_truth, data);
+
+    negative(array);
+    CU_ASSERT(array_equal(array, arr_truth));
+
+    free_array(array);
+    free_array(arr_truth);
 }
 
 void test_array_matmul() {
