@@ -158,6 +158,17 @@ void offset_to_index(size_t offset, size_t *idx, const size_t *shape,
     }
 }
 
+ndArray *copy_array(const ndArray *array) {
+    int ndim = array->ndim;
+    const size_t *shape = array->shape;
+    DType dtype = array->dtype;
+
+    ndArray *new_arr = array_init(ndim, shape, dtype);
+    populate_array(new_arr, array->data);
+
+    return new_arr;
+}
+
 // some important arrays
 ndArray *eye(size_t m, size_t n, DType dtype) {
     const size_t shape[] = {m, n};
