@@ -12,4 +12,7 @@ void print_shape(const ndArray *array);
 void print_tensor(const Tensor *tensor);
 void print_tensor_shape(const Tensor *tensor);
 
+void print_grad_fn(const Tensor *tensor);
+void print_next_functions(const BackwardFn *backward_fn);
+
 #endif // !PRINT_H

@@ -16,6 +16,15 @@ struct Tensor {
 };
 
 Tensor *tensor_init(ndArray *data, bool requires_grad) {
+    if (requires_grad) {
+        DType dtype = get_dtype(data);
+        if (!(dtype == DTYPE_FLOAT || dtype == DTYPE_DOUBLE)) {
+            printf("Invalid argument `requires_grad=True` for non-float "
+                   "tensor.\n");
+            exit(TENSOR_INIT_FAILURE);
+        }
+    }
+
     Tensor *tensor = malloc(sizeof(Tensor));
     if (!tensor) {
         printf("Failure to allocate tensor\n");
@@ -24,8 +33,6 @@ Tensor *tensor_init(ndArray *data, bool requires_grad) {
 
     tensor->data = data;
     tensor->grad = NULL;
-    if (requires_grad)
-        zero_grad(tensor);
 
     tensor->backward_fn = NULL;
     tensor->requires_grad = requires_grad;
@@ -58,6 +65,8 @@ int get_tensor_ndim(const Tensor *tensor) { return get_ndim(tensor->data); }
 size_t *get_tensor_shape(const Tensor *tensor) {
     return get_shape(tensor->data);
 }
+
+DType get_tensor_dtype(const Tensor *tensor) { return get_dtype(tensor->data); }
 
 BackwardFn *get_backward_fn(const Tensor *tensor) {
     return tensor->backward_fn;

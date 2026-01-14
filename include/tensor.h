@@ -21,6 +21,7 @@ Tensor *get_tensor_grad(const Tensor *tensor);
 bool get_requires_grad(const Tensor *tensor);
 int get_tensor_ndim(const Tensor *tensor);
 size_t *get_tensor_shape(const Tensor *tensor);
+DType get_tensor_dtype(const Tensor *tensor);
 
 BackwardFn *get_backward_fn(const Tensor *tensor);
 

@@ -1,0 +1,61 @@
+#include "callable_grads.h"
+#include "array.h"
+#include "autograd.h"
+#include "tensor.h"
+
+#include <stddef.h>
+#include <stdio.h>
+#include <stdlib.h>
+
+Tensor **_accumulate_grad_fn(Tensor **inputs, Tensor **outputs,
+                             Tensor **input_grads, size_t num_inputs,
+                             size_t num_outputs) {
+    if (num_inputs != 1 || num_outputs != 0) {
+        printf("Invalid number of inputs/outputs for _accumulate_grad_fn\n");
+        exit(INVALID_NUM_INPUTS_OUTPUTS);
+    }
+
+    Tensor *tensor = inputs[0];
+    Tensor *grad = input_grads[0];
+
+    Tensor *tensor_grad = get_tensor_grad(tensor);
+    if (!tensor_grad) {
+        zero_grad(tensor);
+        tensor_grad = get_tensor_grad(tensor);
+    }
+
+    ndArray *sum =
+        array_add(get_tensor_data(tensor_grad), get_tensor_data(grad));
+    free_tensor(get_tensor_grad(tensor));
+
+    set_tensor_grad(tensor, tensor_init(sum, false));
+    return NULL;
+}
+
+Tensor **_add_grad_fn(Tensor **inputs, Tensor **outputs, Tensor **input_grads,
+                      size_t num_inputs, size_t num_outputs) {
+    if (num_inputs != 1 || num_outputs != 2) {
+        printf("Invalid number of inputs/outputs for _add_grad_fn\n");
+        exit(INVALID_NUM_INPUTS_OUTPUTS);
+    }
+
+    Tensor **output_grads = malloc(num_outputs * sizeof(Tensor *));
+    if (!output_grads) {
+        printf("Failure to allocate gradients tensor\n");
+        exit(GRAD_INIT_FAILURE);
+    }
+    ndArray *grad = get_tensor_data(input_grads[0]);
+
+    for (size_t i = 0; i < num_outputs; i++) {
+        int ndim = get_tensor_ndim(outputs[i]);
+        const size_t *shape = get_tensor_shape(outputs[i]);
+
+        ndArray *data = copy_array(grad);
+        data = broadcast_grad_data(data, ndim, shape);
+
+        Tensor *t = tensor_init(data, false);
+        output_grads[i] = t;
+    }
+
+    return output_grads;
+}

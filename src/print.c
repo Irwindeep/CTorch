@@ -1,5 +1,6 @@
 #include "print.h"
 #include "array.h"
+#include "autograd.h"
 #include "tensor.h"
 
 #include <stdbool.h>
@@ -123,11 +124,44 @@ void print_tensor(const Tensor *tensor) {
     const ndArray *data = get_tensor_data(tensor);
     printf("Tensor(");
     print_array(data);
-    printf(", requires_grad=%s)",
-           (get_requires_grad(tensor)) ? "True" : "False");
+
+    bool requires_grad = get_requires_grad(tensor);
+    BackwardFn *backward_fn = get_backward_fn(tensor);
+
+    if (backward_fn)
+        printf(", grad_fn=<%s>)", get_backward_name(backward_fn));
+    else if (requires_grad)
+        printf(", requires_grad=True)");
+    else
+        printf(")");
 }
 
 void print_tensor_shape(const Tensor *tensor) {
     const ndArray *data = get_tensor_data(tensor);
     print_shape(data);
+}
+
+void print_grad_fn(const Tensor *tensor) {
+    BackwardFn *backward_fn = get_backward_fn(tensor);
+    if (!backward_fn) {
+        printf("NULL");
+        return;
+    }
+
+    printf("<%s at %p>\n", get_backward_name(backward_fn), backward_fn);
+}
+
+void print_next_functions(const BackwardFn *backward_fn) {
+    BackwardFn **next_functions = get_next_functions(backward_fn);
+    size_t num_functions = get_backward_outputs(backward_fn);
+
+    printf("(");
+    for (size_t i = 0; i < num_functions; i++) {
+        printf("<%s at %p>", get_backward_name(next_functions[i]),
+               next_functions[i]);
+        if (i < num_functions - 1)
+            printf(", ");
+    }
+
+    printf(")");
 }

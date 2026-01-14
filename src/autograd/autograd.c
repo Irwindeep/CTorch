@@ -1,70 +1,100 @@
 #include "autograd.h"
 #include "tensor.h"
 
+#include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
-struct SingleTensorCtx {
-    Tensor *tensor;
+struct BackwardFn {
+    CallableGradFn grad_fn;
+    size_t num_inputs;  // num inputs for the grad_fn
+    size_t num_outputs; // num outputs for the grad_fn
+    BackwardFn **next_functions;
+    Tensor **tensors;
+    char *name;
 };
-struct TwoTensorCtx {
-    Tensor *t1;
-    Tensor *t2;
-};
 
-SingleTensorCtx *init_single_tensor_ctx(Tensor *tensor) {
-    SingleTensorCtx *ctx = malloc(sizeof(SingleTensorCtx));
-    if (!ctx) {
-        printf("Failure to create context\n");
-        exit(CTX_INIT_FAILURE);
+BackwardFn *backward_fn_init(CallableGradFn grad_fn, Tensor **tensors,
+                             size_t num_inputs, size_t num_outputs,
+                             const char *name) {
+    BackwardFn *backward_fn = malloc(sizeof(BackwardFn));
+    if (!backward_fn) {
+        printf("Failure to allocate GradFn\n");
+        exit(BACKWARD_FN_INIT_FAILURE);
     }
 
-    ctx->tensor = tensor;
-    return ctx;
-}
-Tensor *get_tensor_stc(const SingleTensorCtx *ctx) { return ctx->tensor; }
-
-void free_stc(SingleTensorCtx *ctx) {
-    free_tensor(ctx->tensor);
-    free(ctx);
-}
-
-TwoTensorCtx *init_two_tensor_ctx(Tensor *t1, Tensor *t2) {
-    TwoTensorCtx *ctx = malloc(sizeof(TwoTensorCtx));
-    if (!ctx) {
-        printf("Failure to create context\n");
-        exit(CTX_INIT_FAILURE);
+    backward_fn->tensors = malloc(num_inputs * sizeof(Tensor *));
+    if (!backward_fn->tensors) {
+        printf("Failure to allocate BackwardFn\n");
+        exit(BACKWARD_FN_INIT_FAILURE);
     }
 
-    ctx->t1 = t1;
-    ctx->t2 = t2;
+    memcpy(backward_fn->tensors, tensors, num_inputs * sizeof(Tensor *));
 
-    return ctx;
+    backward_fn->grad_fn = grad_fn;
+    backward_fn->num_inputs = num_inputs;
+    backward_fn->num_outputs = num_outputs;
+    backward_fn->next_functions = NULL;
+    backward_fn->name = strdup(name);
+
+    return backward_fn;
 }
 
-Tensor *get_tensor1_ttc(const TwoTensorCtx *ctx) { return ctx->t1; }
-Tensor *get_tensor2_ttc(const TwoTensorCtx *ctx) { return ctx->t2; }
-
-void set_tensor1_ttc(TwoTensorCtx *ctx, Tensor *tensor) { ctx->t1 = tensor; }
-void set_tensor2_ttc(TwoTensorCtx *ctx, Tensor *tensor) { ctx->t2 = tensor; }
-
-void free_ttc(TwoTensorCtx *ctx) {
-    free_tensor(ctx->t1);
-    free_tensor(ctx->t2);
-
-    free(ctx);
-}
-
-void free_context(void *ctx, CtxType ctx_type) {
-    switch (ctx_type) {
-    case DEFAULT_CTX_TYPE:
-        free(ctx);
-        break;
-    case SINGLE_TENSOR_CTX:
-        free_stc(ctx);
-        break;
-    case TWO_TENSOR_CTX:
-        free_ttc(ctx);
-        break;
+BackwardFn **create_next_fns(Tensor **output_tensors, size_t num_outputs) {
+    BackwardFn **next_functions = malloc(num_outputs * sizeof(BackwardFn *));
+    if (!next_functions) {
+        printf("Failure to create next functions\n");
+        exit(NEXT_FNS_INIT_FAILURE);
     }
+
+    for (size_t i = 0; i < num_outputs; i++) {
+        if (!get_requires_grad(output_tensors[i])) {
+            next_functions[i] = NULL;
+            continue;
+        }
+
+        BackwardFn *backward_fn = get_backward_fn(output_tensors[i]);
+        if (!backward_fn) {
+            backward_fn = AccumulateGrad(output_tensors[i]);
+            set_backward_fn(output_tensors[i], backward_fn);
+        }
+        next_functions[i] = backward_fn;
+    }
+
+    return next_functions;
+}
+
+void free_backward_fn(BackwardFn *backward_fn) {
+    if (!backward_fn)
+        return;
+
+    free(backward_fn->tensors);
+    free(backward_fn->next_functions);
+    free(backward_fn->name);
+    free(backward_fn);
+}
+
+BackwardFn **get_next_functions(const BackwardFn *backward_fn) {
+    return backward_fn->next_functions;
+}
+
+char *get_backward_name(const BackwardFn *backward_fn) {
+    return backward_fn->name;
+}
+
+size_t get_backward_inputs(const BackwardFn *backward_fn) {
+    return backward_fn->num_inputs;
+}
+
+size_t get_backward_outputs(const BackwardFn *backward_fn) {
+    return backward_fn->num_outputs;
+}
+
+CallableGradFn get_grad_fn(const BackwardFn *backward_fn) {
+    return backward_fn->grad_fn;
+}
+
+void set_next_functions(BackwardFn *backward_fn, BackwardFn **next_functions) {
+    backward_fn->next_functions = next_functions;
 }
