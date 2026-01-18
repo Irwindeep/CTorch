@@ -31,7 +31,6 @@ void set_tensor_grad(Tensor *tensor, Tensor *grad);
 void set_backward_fn(Tensor *tensor, BackwardFn *backward_fn);
 
 void zero_grad(Tensor *tensor);
-void backward(Tensor *tensor, ndArray *grad);
 
 Tensor *eye_tensor(size_t m, size_t n, DType dtype, bool requires_grad);
 Tensor *zeros_tensor(int ndim, const size_t *shape, DType dtype,

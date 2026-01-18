@@ -24,3 +24,39 @@ BackwardFn *AddBackward(Tensor **input_tensors, Tensor **output_tensors,
 
     return backward_fn;
 }
+
+BackwardFn *MulBackward(Tensor **input_tensors, Tensor **output_tensors,
+                        size_t num_inputs, size_t num_outputs) {
+    CallableGradFn grad_fn = _mul_grad_fn;
+    BackwardFn *backward_fn = backward_fn_init(
+        grad_fn, input_tensors, num_inputs, num_outputs, "MulBackward");
+
+    BackwardFn **next_functions = create_next_fns(output_tensors, num_outputs);
+    set_next_functions(backward_fn, next_functions);
+
+    return backward_fn;
+}
+
+BackwardFn *NegBackward(Tensor **input_tensors, Tensor **output_tensors,
+                        size_t num_inputs, size_t num_outputs) {
+    CallableGradFn grad_fn = _neg_grad_fn;
+    BackwardFn *backward_fn = backward_fn_init(
+        grad_fn, input_tensors, num_inputs, num_outputs, "NegBackward");
+
+    BackwardFn **next_functions = create_next_fns(output_tensors, num_outputs);
+    set_next_functions(backward_fn, next_functions);
+
+    return backward_fn;
+}
+
+BackwardFn *InvBackward(Tensor **input_tensors, Tensor **output_tensors,
+                        size_t num_inputs, size_t num_outputs) {
+    CallableGradFn grad_fn = _inv_grad_fn;
+    BackwardFn *backward_fn = backward_fn_init(
+        grad_fn, input_tensors, num_inputs, num_outputs, "InvBackward");
+
+    BackwardFn **next_functions = create_next_fns(output_tensors, num_outputs);
+    set_next_functions(backward_fn, next_functions);
+
+    return backward_fn;
+}

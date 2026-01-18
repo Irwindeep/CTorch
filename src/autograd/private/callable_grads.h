@@ -15,5 +15,11 @@ Tensor **_accumulate_grad_fn(Tensor **inputs, Tensor **outputs,
                              size_t num_outputs);
 Tensor **_add_grad_fn(Tensor **inputs, Tensor **outputs, Tensor **input_grads,
                       size_t num_inputs, size_t num_outputs);
+Tensor **_mul_grad_fn(Tensor **inputs, Tensor **outputs, Tensor **input_grads,
+                      size_t num_inputs, size_t num_outputs);
+Tensor **_neg_grad_fn(Tensor **inputs, Tensor **outputs, Tensor **input_grads,
+                      size_t num_inputs, size_t num_outputs);
+Tensor **_inv_grad_fn(Tensor **inputs, Tensor **outputs, Tensor **input_grads,
+                      size_t num_inputs, size_t num_outputs);
 
 #endif // !CALLABLE_GRADS_H

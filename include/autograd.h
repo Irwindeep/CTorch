@@ -22,14 +22,23 @@ BackwardFn **get_next_functions(const BackwardFn *backward_fn);
 char *get_backward_name(const BackwardFn *backward_fn);
 size_t get_backward_inputs(const BackwardFn *backward_fn);
 size_t get_backward_outputs(const BackwardFn *backward_fn);
+Tensor **get_backward_fn_tensors(const BackwardFn *backward_fn);
 CallableGradFn get_grad_fn(const BackwardFn *backward_fn);
 
 void set_next_functions(BackwardFn *backward_fn, BackwardFn **next_functions);
+
+Tensor **gradient(Tensor **inputs, Tensor **outputs, Tensor **input_grads,
+                  size_t num_inputs, size_t num_outputs);
+void backward(Tensor *tensor, Tensor *grad);
 
 BackwardFn *AccumulateGrad(Tensor *input);
 BackwardFn *AddBackward(Tensor **input_tensors, Tensor **output_tensors,
                         size_t num_inputs, size_t num_outputs);
 BackwardFn *MulBackward(Tensor **input_tensors, Tensor **output_tensors,
+                        size_t num_inputs, size_t num_outputs);
+BackwardFn *NegBackward(Tensor **input_tensors, Tensor **output_tensors,
+                        size_t num_inputs, size_t num_outputs);
+BackwardFn *InvBackward(Tensor **input_tensors, Tensor **output_tensors,
                         size_t num_inputs, size_t num_outputs);
 
 #endif // !AUTOGRAD_H

@@ -11,7 +11,7 @@ struct BackwardFn {
     size_t num_inputs;  // num inputs for the grad_fn
     size_t num_outputs; // num outputs for the grad_fn
     BackwardFn **next_functions;
-    Tensor **tensors;
+    Tensor **tensors; // inputs to backward function
     char *name;
 };
 
@@ -89,6 +89,10 @@ size_t get_backward_inputs(const BackwardFn *backward_fn) {
 
 size_t get_backward_outputs(const BackwardFn *backward_fn) {
     return backward_fn->num_outputs;
+}
+
+Tensor **get_backward_fn_tensors(const BackwardFn *backward_fn) {
+    return backward_fn->tensors;
 }
 
 CallableGradFn get_grad_fn(const BackwardFn *backward_fn) {
