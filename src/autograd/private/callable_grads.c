@@ -28,7 +28,8 @@ Tensor **_accumulate_grad_fn(Tensor **inputs, Tensor **outputs,
         array_add(get_tensor_data(tensor_grad), get_tensor_data(grad));
     free_tensor(get_tensor_grad(tensor));
 
-    set_tensor_grad(tensor, tensor_init(sum, false));
+    set_tensor_grad(tensor,
+                    tensor_init(sum, false, get_tensor_environ(tensor)));
     return NULL;
 }
 
@@ -53,7 +54,7 @@ Tensor **_add_grad_fn(Tensor **inputs, Tensor **outputs, Tensor **input_grads,
         ndArray *data = copy_array(grad);
         data = broadcast_grad_data(data, ndim, shape);
 
-        Tensor *t = tensor_init(data, false);
+        Tensor *t = tensor_init(data, false, get_tensor_environ(outputs[i]));
         output_grads[i] = t;
     }
 
@@ -84,7 +85,7 @@ Tensor **_mul_grad_fn(Tensor **inputs, Tensor **outputs, Tensor **input_grads,
         array_muli(&data, other_arr);
 
         data = broadcast_grad_data(data, ndim, shape);
-        Tensor *t = tensor_init(data, false);
+        Tensor *t = tensor_init(data, false, get_tensor_environ(outputs[i]));
         output_grads[i] = t;
     }
 
@@ -112,7 +113,7 @@ Tensor **_neg_grad_fn(Tensor **inputs, Tensor **outputs, Tensor **input_grads,
     negativei(&data);
 
     data = broadcast_grad_data(data, ndim, shape);
-    Tensor *t = tensor_init(data, false);
+    Tensor *t = tensor_init(data, false, get_tensor_environ(outputs[0]));
     output_grads[0] = t;
 
     return output_grads;
@@ -141,7 +142,7 @@ Tensor **_inv_grad_fn(Tensor **inputs, Tensor **outputs, Tensor **input_grads,
     negativei(&data);
 
     data = broadcast_grad_data(data, ndim, shape);
-    Tensor *t = tensor_init(data, false);
+    Tensor *t = tensor_init(data, false, get_tensor_environ(outputs[0]));
     output_grads[0] = t;
 
     return output_grads;

@@ -9,10 +9,18 @@
 #define INVALID_GRAD 2
 #define DEPENDENCY_ARR_INIT_FAILURE 3
 
+#define ENV_INIT_FAILURE 1
+#define ENV_PUSH_FAILURE 2
+
+typedef struct Environment Environment;
 typedef struct Tensor Tensor;
 typedef struct BackwardFn BackwardFn;
 
-Tensor *tensor_init(ndArray *data, bool requires_grad);
+Environment *env_init();
+void free_env(Environment *environ);
+void env_push(Environment *environ, Tensor *tensor);
+
+Tensor *tensor_init(ndArray *data, bool requires_grad, Environment *environ);
 void free_tensor(Tensor *tensor);
 
 ndArray *get_tensor_data(const Tensor *tensor);
@@ -22,6 +30,7 @@ bool get_requires_grad(const Tensor *tensor);
 int get_tensor_ndim(const Tensor *tensor);
 size_t *get_tensor_shape(const Tensor *tensor);
 DType get_tensor_dtype(const Tensor *tensor);
+Environment *get_tensor_environ(const Tensor *tensor);
 
 BackwardFn *get_backward_fn(const Tensor *tensor);
 
@@ -32,11 +41,12 @@ void set_backward_fn(Tensor *tensor, BackwardFn *backward_fn);
 
 void zero_grad(Tensor *tensor);
 
-Tensor *eye_tensor(size_t m, size_t n, DType dtype, bool requires_grad);
+Tensor *eye_tensor(size_t m, size_t n, DType dtype, bool requires_grad,
+                   Environment *environ);
 Tensor *zeros_tensor(int ndim, const size_t *shape, DType dtype,
-                     bool requires_grad);
+                     bool requires_grad, Environment *environ);
 Tensor *ones_tensor(int ndim, const size_t *shape, DType dtype,
-                    bool requires_grad);
+                    bool requires_grad, Environment *environ);
 
 Tensor *tensor_add(Tensor *t1, Tensor *t2);
 Tensor *tensor_sub(Tensor *t1, Tensor *t2);

@@ -13,7 +13,7 @@ Tensor *tensor_add(Tensor *t1, Tensor *t2) {
          t2_requires_grad = get_requires_grad(t2);
     bool requires_grad = t1_requires_grad || t2_requires_grad;
 
-    Tensor *tensor = tensor_init(data, requires_grad);
+    Tensor *tensor = tensor_init(data, requires_grad, get_tensor_environ(t1));
     if (requires_grad) {
         BackwardFn *backward_fn =
             AddBackward((Tensor *[]){tensor}, (Tensor *[]){t1, t2}, 1, 2);
@@ -38,7 +38,7 @@ Tensor *tensor_mul(Tensor *t1, Tensor *t2) {
          t2_requires_grad = get_requires_grad(t2);
     bool requires_grad = t1_requires_grad || t2_requires_grad;
 
-    Tensor *tensor = tensor_init(data, requires_grad);
+    Tensor *tensor = tensor_init(data, requires_grad, get_tensor_environ(t1));
     if (requires_grad) {
         BackwardFn *backward_fn =
             MulBackward((Tensor *[]){tensor}, (Tensor *[]){t1, t2}, 1, 2);
@@ -60,7 +60,8 @@ Tensor *tensor_neg(Tensor *tensor) {
     ndArray *new_data = negative(data);
     bool requires_grad = get_requires_grad(tensor);
 
-    Tensor *new_tensor = tensor_init(new_data, requires_grad);
+    Tensor *new_tensor =
+        tensor_init(new_data, requires_grad, get_tensor_environ(tensor));
     if (requires_grad) {
         BackwardFn *backward_fn =
             NegBackward((Tensor *[]){new_tensor}, (Tensor *[]){tensor}, 1, 1);
@@ -75,7 +76,8 @@ Tensor *tensor_inv(Tensor *tensor) {
     ndArray *new_data = inverse(data);
     bool requires_grad = get_requires_grad(tensor);
 
-    Tensor *new_tensor = tensor_init(new_data, requires_grad);
+    Tensor *new_tensor =
+        tensor_init(new_data, requires_grad, get_tensor_environ(tensor));
     if (requires_grad) {
         BackwardFn *backward_fn =
             InvBackward((Tensor *[]){new_tensor}, (Tensor *[]){tensor}, 1, 1);

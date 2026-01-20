@@ -12,10 +12,11 @@ struct Tensor {
     ndArray *data;
     Tensor *grad;
     BackwardFn *backward_fn;
+    Environment *environ;
     bool requires_grad;
 };
 
-Tensor *tensor_init(ndArray *data, bool requires_grad) {
+Tensor *tensor_init(ndArray *data, bool requires_grad, Environment *environ) {
     if (requires_grad) {
         DType dtype = get_dtype(data);
         if (!(dtype == DTYPE_FLOAT || dtype == DTYPE_DOUBLE)) {
@@ -35,7 +36,11 @@ Tensor *tensor_init(ndArray *data, bool requires_grad) {
     tensor->grad = NULL;
 
     tensor->backward_fn = NULL;
+    tensor->environ = environ;
     tensor->requires_grad = requires_grad;
+
+    if (environ)
+        env_push(environ, tensor);
 
     return tensor;
 }
@@ -67,6 +72,9 @@ size_t *get_tensor_shape(const Tensor *tensor) {
 }
 
 DType get_tensor_dtype(const Tensor *tensor) { return get_dtype(tensor->data); }
+Environment *get_tensor_environ(const Tensor *tensor) {
+    return tensor->environ;
+}
 
 BackwardFn *get_backward_fn(const Tensor *tensor) {
     return tensor->backward_fn;
@@ -85,28 +93,29 @@ void zero_grad(Tensor *tensor) {
     int ndim = get_ndim(tensor->data);
     const size_t *shape = get_shape(tensor->data);
     DType dtype = get_dtype(tensor->data);
-    tensor->grad = zeros_tensor(ndim, shape, dtype, false);
+    tensor->grad = zeros_tensor(ndim, shape, dtype, false, tensor->environ);
 }
 
-Tensor *eye_tensor(size_t m, size_t n, DType dtype, bool requires_grad) {
+Tensor *eye_tensor(size_t m, size_t n, DType dtype, bool requires_grad,
+                   Environment *environ) {
     ndArray *data = eye(m, n, dtype);
-    Tensor *tensor = tensor_init(data, requires_grad);
+    Tensor *tensor = tensor_init(data, requires_grad, environ);
 
     return tensor;
 }
 
 Tensor *zeros_tensor(int ndim, const size_t *shape, DType dtype,
-                     bool requires_grad) {
+                     bool requires_grad, Environment *environ) {
     ndArray *data = zeros(ndim, shape, dtype);
-    Tensor *tensor = tensor_init(data, requires_grad);
+    Tensor *tensor = tensor_init(data, requires_grad, environ);
 
     return tensor;
 }
 
 Tensor *ones_tensor(int ndim, const size_t *shape, DType dtype,
-                    bool requires_grad) {
+                    bool requires_grad, Environment *environ) {
     ndArray *data = ones(ndim, shape, dtype);
-    Tensor *tensor = tensor_init(data, requires_grad);
+    Tensor *tensor = tensor_init(data, requires_grad, environ);
 
     return tensor;
 }
