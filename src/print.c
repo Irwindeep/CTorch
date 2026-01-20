@@ -129,22 +129,23 @@ void print_tensor(const Tensor *tensor) {
     BackwardFn *backward_fn = get_backward_fn(tensor);
 
     if (backward_fn)
-        printf(", grad_fn=<%s>)", get_backward_name(backward_fn));
+        printf(", grad_fn=<%s>)\n", get_backward_name(backward_fn));
     else if (requires_grad)
-        printf(", requires_grad=True)");
+        printf(", requires_grad=True)\n");
     else
-        printf(")");
+        printf(")\n");
 }
 
 void print_tensor_shape(const Tensor *tensor) {
     const ndArray *data = get_tensor_data(tensor);
     print_shape(data);
+    printf("\n");
 }
 
 void print_grad_fn(const Tensor *tensor) {
     BackwardFn *backward_fn = get_backward_fn(tensor);
     if (!backward_fn) {
-        printf("NULL");
+        printf("NULL\n");
         return;
     }
 
@@ -163,5 +164,5 @@ void print_next_functions(const BackwardFn *backward_fn) {
             printf(", ");
     }
 
-    printf(")");
+    printf(")\n");
 }
