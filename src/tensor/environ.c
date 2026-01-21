@@ -53,3 +53,13 @@ void env_push(Environment *environ, Tensor *tensor) {
 
     environ->tensors[environ->num_tensors++] = tensor;
 }
+
+Tensor *env_pop(Environment *environ) {
+    if (environ->num_tensors == 0) {
+        printf("No Tensors in the environment, invalid pop\n");
+        return NULL;
+    }
+
+    Tensor *tensor = environ->tensors[--environ->num_tensors];
+    return tensor;
+}

@@ -11,26 +11,32 @@ struct BackwardFn {
     size_t num_inputs;  // num inputs for the grad_fn
     size_t num_outputs; // num outputs for the grad_fn
     BackwardFn **next_functions;
-    Tensor **tensors; // inputs to backward function
+    Tensor **input_tensors;  // inputs to backward function
+    Tensor **output_tensors; // outputs of backward function
     char *name;
 };
 
-BackwardFn *backward_fn_init(CallableGradFn grad_fn, Tensor **tensors,
-                             size_t num_inputs, size_t num_outputs,
-                             const char *name) {
+BackwardFn *backward_fn_init(CallableGradFn grad_fn, Tensor **input_tensors,
+                             Tensor **output_tensors, size_t num_inputs,
+                             size_t num_outputs, const char *name) {
     BackwardFn *backward_fn = malloc(sizeof(BackwardFn));
     if (!backward_fn) {
         printf("Failure to allocate GradFn\n");
         exit(BACKWARD_FN_INIT_FAILURE);
     }
 
-    backward_fn->tensors = malloc(num_inputs * sizeof(Tensor *));
-    if (!backward_fn->tensors) {
+    backward_fn->input_tensors = malloc(num_inputs * sizeof(Tensor *));
+    backward_fn->output_tensors = malloc(num_outputs * sizeof(Tensor *));
+
+    if (!(backward_fn->input_tensors && backward_fn->output_tensors)) {
         printf("Failure to allocate BackwardFn\n");
         exit(BACKWARD_FN_INIT_FAILURE);
     }
 
-    memcpy(backward_fn->tensors, tensors, num_inputs * sizeof(Tensor *));
+    memcpy(backward_fn->input_tensors, input_tensors,
+           num_inputs * sizeof(Tensor *));
+    memcpy(backward_fn->output_tensors, output_tensors,
+           num_outputs * sizeof(Tensor *));
 
     backward_fn->grad_fn = grad_fn;
     backward_fn->num_inputs = num_inputs;
@@ -69,7 +75,8 @@ void free_backward_fn(BackwardFn *backward_fn) {
     if (!backward_fn)
         return;
 
-    free(backward_fn->tensors);
+    free(backward_fn->input_tensors);
+    free(backward_fn->output_tensors);
     free(backward_fn->next_functions);
     free(backward_fn->name);
     free(backward_fn);
@@ -91,8 +98,12 @@ size_t get_backward_outputs(const BackwardFn *backward_fn) {
     return backward_fn->num_outputs;
 }
 
-Tensor **get_backward_fn_tensors(const BackwardFn *backward_fn) {
-    return backward_fn->tensors;
+Tensor **get_backward_fn_ip_tensors(const BackwardFn *backward_fn) {
+    return backward_fn->input_tensors;
+}
+
+Tensor **get_backward_fn_op_tensors(const BackwardFn *backward_fn) {
+    return backward_fn->output_tensors;
 }
 
 CallableGradFn get_grad_fn(const BackwardFn *backward_fn) {

@@ -26,7 +26,6 @@ Tensor **_accumulate_grad_fn(Tensor **inputs, Tensor **outputs,
 
     ndArray *sum =
         array_add(get_tensor_data(tensor_grad), get_tensor_data(grad));
-    free_tensor(get_tensor_grad(tensor));
 
     set_tensor_grad(tensor,
                     tensor_init(sum, false, get_tensor_environ(tensor)));
@@ -136,8 +135,8 @@ Tensor **_inv_grad_fn(Tensor **inputs, Tensor **outputs, Tensor **input_grads,
     int ndim = get_tensor_ndim(outputs[0]);
     const size_t *shape = get_tensor_shape(outputs[0]);
 
-    ndArray *data = copy_array(grad);
-    inversei(&data);
+    ndArray *data = inverse(get_tensor_data(outputs[0]));
+    array_muli(&data, grad);
     array_muli(&data, data);
     negativei(&data);
 

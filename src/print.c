@@ -121,6 +121,11 @@ void print_shape(const ndArray *array) {
 }
 
 void print_tensor(const Tensor *tensor) {
+    if (!tensor) {
+        printf("NULL\n");
+        return;
+    }
+
     const ndArray *data = get_tensor_data(tensor);
     printf("Tensor(");
     print_array(data);

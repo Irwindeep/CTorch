@@ -50,7 +50,6 @@ void free_tensor(Tensor *tensor) {
         return;
 
     free_array(tensor->data);
-    free_tensor(tensor->grad);
     free_backward_fn(tensor->backward_fn);
 
     free(tensor);

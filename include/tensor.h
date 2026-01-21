@@ -18,7 +18,9 @@ typedef struct BackwardFn BackwardFn;
 
 Environment *env_init();
 void free_env(Environment *environ);
+
 void env_push(Environment *environ, Tensor *tensor);
+Tensor *env_pop(Environment *environ);
 
 Tensor *tensor_init(ndArray *data, bool requires_grad, Environment *environ);
 void free_tensor(Tensor *tensor);
