@@ -56,13 +56,7 @@ void free_tensor(Tensor *tensor) {
 }
 
 ndArray *get_tensor_data(const Tensor *tensor) { return tensor->data; }
-Tensor *get_tensor_grad(const Tensor *tensor) {
-    if (!tensor->requires_grad) {
-        printf("Cannot have gradient for non-requires_grad Tensor.\n");
-        exit(INVALID_GRAD);
-    }
-    return tensor->grad;
-}
+Tensor *get_tensor_grad(const Tensor *tensor) { return tensor->grad; }
 bool get_requires_grad(const Tensor *tensor) { return tensor->requires_grad; }
 int get_tensor_ndim(const Tensor *tensor) { return get_ndim(tensor->data); }
 
@@ -116,5 +110,32 @@ Tensor *ones_tensor(int ndim, const size_t *shape, DType dtype,
     ndArray *data = ones(ndim, shape, dtype);
     Tensor *tensor = tensor_init(data, requires_grad, environ);
 
+    return tensor;
+}
+
+Tensor *zeros_like(const Tensor *tensor, bool requires_grad, Environment *env) {
+    int ndim = get_tensor_ndim(tensor);
+    const size_t *shape = get_tensor_shape(tensor);
+    DType dtype = get_tensor_dtype(tensor);
+
+    Tensor *output = zeros_tensor(ndim, shape, dtype, requires_grad, env);
+    return output;
+}
+
+Tensor *ones_like(const Tensor *tensor, bool requires_grad, Environment *env) {
+    int ndim = get_tensor_ndim(tensor);
+    const size_t *shape = get_tensor_shape(tensor);
+    DType dtype = get_tensor_dtype(tensor);
+
+    Tensor *output = ones_tensor(ndim, shape, dtype, requires_grad, env);
+    return output;
+}
+
+Tensor *scalar(ArrayVal value, DType dtype, bool requires_grad,
+               Environment *environ) {
+    ndArray *data = array_init(0, (const size_t[]){}, dtype);
+    set_value(data, NULL, value);
+
+    Tensor *tensor = tensor_init(data, requires_grad, environ);
     return tensor;
 }

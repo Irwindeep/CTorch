@@ -25,6 +25,11 @@ static void _backward(Tensor **inputs, Tensor **grads,
     size_t i = 0;
     while (i < num_outputs) {
         BackwardFn *next_fn = next_fns[i];
+        if (!next_fn) {
+            i++;
+            continue;
+        }
+
         Tensor **next_fn_inputs = get_backward_fn_ip_tensors(next_fn);
         size_t next_fn_num_ips = get_backward_inputs(next_fn);
 

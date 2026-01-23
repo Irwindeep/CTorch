@@ -49,6 +49,10 @@ Tensor *zeros_tensor(int ndim, const size_t *shape, DType dtype,
                      bool requires_grad, Environment *environ);
 Tensor *ones_tensor(int ndim, const size_t *shape, DType dtype,
                     bool requires_grad, Environment *environ);
+Tensor *zeros_like(const Tensor *tensor, bool requires_grad, Environment *env);
+Tensor *ones_like(const Tensor *tensor, bool requires_grad, Environment *env);
+Tensor *scalar(ArrayVal value, DType dtype, bool requires_grad,
+               Environment *environ);
 
 Tensor *tensor_add(Tensor *t1, Tensor *t2);
 Tensor *tensor_sub(Tensor *t1, Tensor *t2);
