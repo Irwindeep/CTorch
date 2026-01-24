@@ -1,4 +1,5 @@
 #include "array.h"
+#include "error_codes.h"
 
 #include <stddef.h>
 #include <stdio.h>
@@ -9,11 +10,11 @@ ndArray *array_add(ndArray *arr1, ndArray *arr2) {
     int ndim = (ndim1 > ndim2) ? ndim1 : ndim2;
 
     DType dtype1 = get_dtype(arr1), dtype2 = get_dtype(arr2), dtype;
-    if (dtype1 != dtype2) {
-        printf("Cannot add arrays with dtypes `%s` and `%s`\n",
-               DTypeNames[dtype1], DTypeNames[dtype2]);
-        exit(INVALID_DTYPE);
-    }
+    if (dtype1 != dtype2)
+        RUNTIME_ERRORF(INVALID_DTYPE,
+                       "Cannot add arrays with dtypes `%s` and `%s`",
+                       DTypeNames[dtype1], DTypeNames[dtype2]);
+
     dtype = dtype1;
 
     size_t *shape1 = get_shape(arr1), *shape2 = get_shape(arr2);
@@ -40,11 +41,11 @@ ndArray *array_sub(ndArray *arr1, ndArray *arr2) {
     int ndim = (ndim1 > ndim2) ? ndim1 : ndim2;
 
     DType dtype1 = get_dtype(arr1), dtype2 = get_dtype(arr2), dtype;
-    if (dtype1 != dtype2) {
-        printf("Cannot subtract arrays with dtypes `%s` and `%s`\n",
-               DTypeNames[dtype1], DTypeNames[dtype2]);
-        exit(INVALID_DTYPE);
-    }
+    if (dtype1 != dtype2)
+        RUNTIME_ERRORF(INVALID_DTYPE,
+                       "Cannot subtract arrays with dtypes `%s` and `%s`",
+                       DTypeNames[dtype1], DTypeNames[dtype2]);
+
     dtype = dtype1;
 
     size_t *shape1 = get_shape(arr1), *shape2 = get_shape(arr2);
@@ -71,11 +72,11 @@ ndArray *array_mul(ndArray *arr1, ndArray *arr2) {
     int ndim = (ndim1 > ndim2) ? ndim1 : ndim2;
 
     DType dtype1 = get_dtype(arr1), dtype2 = get_dtype(arr2), dtype;
-    if (dtype1 != dtype2) {
-        printf("Cannot multiply arrays with dtypes `%s` and `%s`\n",
-               DTypeNames[dtype1], DTypeNames[dtype2]);
-        exit(INVALID_DTYPE);
-    }
+    if (dtype1 != dtype2)
+        RUNTIME_ERRORF(INVALID_DTYPE,
+                       "Cannot multiply arrays with dtypes `%s` and `%s`",
+                       DTypeNames[dtype1], DTypeNames[dtype2]);
+
     dtype = dtype1;
 
     size_t *shape1 = get_shape(arr1), *shape2 = get_shape(arr2);
@@ -101,11 +102,11 @@ ndArray *array_div(ndArray *arr1, ndArray *arr2) {
     int ndim = (ndim1 > ndim2) ? ndim1 : ndim2;
 
     DType dtype1 = get_dtype(arr1), dtype2 = get_dtype(arr2), dtype;
-    if (dtype1 != dtype2) {
-        printf("Cannot divide arrays with dtypes `%s` and `%s`\n",
-               DTypeNames[dtype1], DTypeNames[dtype2]);
-        exit(INVALID_DTYPE);
-    }
+    if (dtype1 != dtype2)
+        RUNTIME_ERRORF(INVALID_DTYPE,
+                       "Cannot divide arrays with dtypes `%s` and `%s`",
+                       DTypeNames[dtype1], DTypeNames[dtype2]);
+
     dtype = dtype1;
 
     size_t *shape1 = get_shape(arr1), *shape2 = get_shape(arr2);

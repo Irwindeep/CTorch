@@ -1,4 +1,5 @@
 #include "array.h"
+#include "error_codes.h"
 
 #include <stddef.h>
 #include <stdio.h>
@@ -26,10 +27,8 @@ struct ndArray {
 // array initialization
 ndArray *array_init(int ndim, const size_t *shape, DType dtype) {
     ndArray *array = malloc(sizeof(ndArray));
-    if (!array) {
-        printf("Failed to initialize array\n");
-        exit(ARRAY_INIT_FAILURE);
-    }
+    if (!array)
+        RUNTIME_ERROR(ARRAY_INIT_FAILURE, "Failed to initialize array");
 
     array->ndim = ndim;
     array->dtype = dtype;
@@ -80,10 +79,9 @@ static const void *array_idx_const(const ndArray *array,
     for (int i = 0; i < array->ndim; i++) {
         if (indices[i] < array->shape[i])
             offset += array->strides[i] * indices[i];
-        else {
-            printf("Invalid index `%zu` at position `%d`\n", indices[i], i);
-            exit(INVALID_IDX);
-        }
+        else
+            RUNTIME_ERRORF(INVALID_IDX, "Invalid index `%zu` at position `%d`",
+                           indices[i], i);
     }
     return (const char *)array->data + offset;
 }

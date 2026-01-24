@@ -1,4 +1,5 @@
 #include "autograd.h"
+#include "error_codes.h"
 #include "tensor.h"
 
 #include <stddef.h>
@@ -20,18 +21,15 @@ BackwardFn *backward_fn_init(CallableGradFn grad_fn, Tensor **input_tensors,
                              Tensor **output_tensors, size_t num_inputs,
                              size_t num_outputs, const char *name) {
     BackwardFn *backward_fn = malloc(sizeof(BackwardFn));
-    if (!backward_fn) {
-        printf("Failure to allocate GradFn\n");
-        exit(BACKWARD_FN_INIT_FAILURE);
-    }
+    if (!backward_fn)
+        RUNTIME_ERROR(BACKWARD_FN_INIT_FAILURE, "Failure to allocate GradFn");
 
     backward_fn->input_tensors = malloc(num_inputs * sizeof(Tensor *));
     backward_fn->output_tensors = malloc(num_outputs * sizeof(Tensor *));
 
-    if (!(backward_fn->input_tensors && backward_fn->output_tensors)) {
-        printf("Failure to allocate BackwardFn\n");
-        exit(BACKWARD_FN_INIT_FAILURE);
-    }
+    if (!(backward_fn->input_tensors && backward_fn->output_tensors))
+        RUNTIME_ERROR(BACKWARD_FN_INIT_FAILURE,
+                      "Failure to allocate BackwardFn");
 
     memcpy(backward_fn->input_tensors, input_tensors,
            num_inputs * sizeof(Tensor *));
@@ -49,10 +47,9 @@ BackwardFn *backward_fn_init(CallableGradFn grad_fn, Tensor **input_tensors,
 
 BackwardFn **create_next_fns(Tensor **output_tensors, size_t num_outputs) {
     BackwardFn **next_functions = malloc(num_outputs * sizeof(BackwardFn *));
-    if (!next_functions) {
-        printf("Failure to create next functions\n");
-        exit(NEXT_FNS_INIT_FAILURE);
-    }
+    if (!next_functions)
+        RUNTIME_ERROR(NEXT_FNS_INIT_FAILURE,
+                      "Failure to create next functions");
 
     for (size_t i = 0; i < num_outputs; i++) {
         if (!get_requires_grad(output_tensors[i])) {

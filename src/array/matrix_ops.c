@@ -1,4 +1,5 @@
 #include "array.h"
+#include "error_codes.h"
 
 #include <stddef.h>
 #include <stdio.h>
@@ -56,17 +57,15 @@ static void _batch_matmul(ndArray *arr1, ndArray *arr2, ndArray *result) {
 (..., m, k), (..., k, n) -> (..., m, n)
 */
 ndArray *matmul(ndArray *arr1, ndArray *arr2) {
-    if (get_ndim(arr1) < 2 || get_ndim(arr2) < 2) {
-        printf("matmul requires arrays with ndim >= 2\n");
-        exit(INVALID_ARRAY);
-    }
+    if (get_ndim(arr1) < 2 || get_ndim(arr2) < 2)
+        RUNTIME_ERROR(INVALID_ARRAY, "matmul requires arrays with ndim >= 2");
 
     DType dtype1 = get_dtype(arr1), dtype2 = get_dtype(arr2), dtype;
-    if (dtype1 != dtype2) {
-        printf("Cannot matmul arrays with dtypes `%s` and `%s`\n",
-               DTypeNames[dtype1], DTypeNames[dtype2]);
-        exit(INVALID_DTYPE);
-    }
+    if (dtype1 != dtype2)
+        RUNTIME_ERRORF(INVALID_DTYPE,
+                       "Cannot matmul arrays with dtypes `%s` and `%s`",
+                       DTypeNames[dtype1], DTypeNames[dtype2]);
+
     dtype = dtype1;
 
     size_t m = get_shape(arr1)[get_ndim(arr1) - 2],
@@ -74,12 +73,12 @@ ndArray *matmul(ndArray *arr1, ndArray *arr2) {
            k2 = get_shape(arr2)[get_ndim(arr2) - 2],
            n = get_shape(arr2)[get_ndim(arr2) - 1];
 
-    if (k1 != k2) {
-        printf("matmul shape mismatch: k1 (%zu) != k2 (%zu) in (..., m, k1), "
-               "(..., k2, n) -> (..., m, n)\n",
-               k1, k2);
-        exit(SHAPE_MISMATCH);
-    }
+    if (k1 != k2)
+        RUNTIME_ERRORF(
+            SHAPE_MISMATCH,
+            "matmul shape mismatch: k1 (%zu) != k2 (%zu) in (..., m, k1), "
+            "(..., k2, n) -> (..., m, n)",
+            k1, k2);
 
     int batch_ndim1 = get_ndim(arr1) - 2, batch_ndim2 = get_ndim(arr2) - 2;
     int batch_ndim = (batch_ndim1 > batch_ndim2) ? batch_ndim1 : batch_ndim2;
@@ -119,17 +118,13 @@ void transpose(ndArray *array, const int *dims) {
 
     size_t new_shape[ndim], new_strides[ndim];
 
-    if (_repeated_dims(dims, ndim)) {
-        printf("Repeated Array dims\n");
-        exit(REPEATED_ARRAY_DIMS);
-    }
+    if (_repeated_dims(dims, ndim))
+        RUNTIME_ERROR(REPEATED_ARRAY_DIMS, "Repeated Array dims");
 
     for (int d = 0; d < ndim; d++) {
         int dim = dims[d];
-        if (dim > ndim) {
-            printf("Invalid dim - %d\n", dim);
-            exit(INVALID_DIM);
-        }
+        if (dim > ndim)
+            RUNTIME_ERRORF(INVALID_DIM, "Invalid dim - %d", dim);
 
         new_shape[d] = shape[dim];
         new_strides[d] = strides[dim];

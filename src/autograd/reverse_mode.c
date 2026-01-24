@@ -1,5 +1,6 @@
 #include "array.h"
 #include "autograd.h"
+#include "error_codes.h"
 #include "tensor.h"
 
 #include <CUnit/TestRun.h>
@@ -45,20 +46,18 @@ static void _backward(Tensor **inputs, Tensor **grads,
 
 void backward(Tensor *tensor, Tensor *grad) {
     bool requires_grad = get_requires_grad(tensor);
-    if (!requires_grad) {
-        printf("Invalid backward pass on non-requires_grad tensor\n");
-        exit(INVALID_BACKWARD_PASS);
-    }
+    if (!requires_grad)
+        RUNTIME_ERROR(INVALID_BACKWARD_PASS,
+                      "Invalid backward pass on non-requires_grad tensor");
 
     if (!grad) {
         size_t ndim = get_tensor_ndim(tensor);
         size_t *shape = get_tensor_shape(tensor);
         DType dtype = get_tensor_dtype(tensor);
 
-        if (ndim != 0) {
-            printf("Invalid backward gradient for non-zero dim tensor\n");
-            exit(GRAD_INIT_FAILURE);
-        }
+        if (ndim != 0)
+            RUNTIME_ERROR(GRAD_INIT_FAILURE,
+                          "Invalid backward gradient for non-zero dim tensor");
 
         grad = ones_tensor(ndim, shape, dtype, false, NULL);
     }

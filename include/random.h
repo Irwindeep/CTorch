@@ -7,9 +7,6 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#define PRNG_INIT_FAILURE 1
-#define INVALID_LOW_HIGH 2
-
 typedef struct PRNG PRNG;
 
 PRNG *rng_init(uint64_t seed);

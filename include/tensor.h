@@ -5,13 +5,6 @@
 #include <stdbool.h>
 #include <stddef.h>
 
-#define TENSOR_INIT_FAILURE 1
-#define INVALID_GRAD 2
-#define DEPENDENCY_ARR_INIT_FAILURE 3
-
-#define ENV_INIT_FAILURE 1
-#define ENV_PUSH_FAILURE 2
-
 typedef struct Environment Environment;
 typedef struct Tensor Tensor;
 typedef struct BackwardFn BackwardFn;

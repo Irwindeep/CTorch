@@ -1,6 +1,7 @@
 #include "tensor.h"
 #include "array.h"
 #include "autograd.h"
+#include "error_codes.h"
 
 #include <stdbool.h>
 #include <stddef.h>
@@ -19,18 +20,15 @@ struct Tensor {
 Tensor *tensor_init(ndArray *data, bool requires_grad, Environment *environ) {
     if (requires_grad) {
         DType dtype = get_dtype(data);
-        if (!(dtype == DTYPE_FLOAT || dtype == DTYPE_DOUBLE)) {
-            printf("Invalid argument `requires_grad=True` for non-float "
-                   "tensor.\n");
-            exit(TENSOR_INIT_FAILURE);
-        }
+        if (!(dtype == DTYPE_FLOAT || dtype == DTYPE_DOUBLE))
+            RUNTIME_ERROR(TENSOR_INIT_FAILURE,
+                          "Invalid argument `requires_grad=True` for non-float "
+                          "tensor");
     }
 
     Tensor *tensor = malloc(sizeof(Tensor));
-    if (!tensor) {
-        printf("Failure to allocate tensor\n");
-        exit(TENSOR_INIT_FAILURE);
-    }
+    if (!tensor)
+        RUNTIME_ERROR(TENSOR_INIT_FAILURE, "Failure to allocate tensor\n");
 
     tensor->data = data;
     tensor->grad = NULL;

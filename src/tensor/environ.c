@@ -1,3 +1,4 @@
+#include "error_codes.h"
 #include "tensor.h"
 #include <stddef.h>
 #include <stdio.h>
@@ -15,10 +16,8 @@ struct Environment {
 
 Environment *env_init() {
     Environment *environ = malloc(sizeof(Environment));
-    if (!environ) {
-        printf("Failure to create environment\n");
-        exit(ENV_INIT_FAILURE);
-    }
+    if (!environ)
+        RUNTIME_ERROR(ENV_INIT_FAILURE, "Failure to create environment");
 
     environ->capacity = 1;
     environ->tensors = malloc(environ->capacity * sizeof(Tensor *));
@@ -42,10 +41,8 @@ void env_push(Environment *environ, Tensor *tensor) {
         size_t new_capacity = 2 * environ->capacity;
         Tensor **new_tensors =
             realloc(environ->tensors, new_capacity * sizeof(Tensor *));
-        if (!new_tensors) {
-            printf("Memory Re-allocation failure in `env_push`\n");
-            exit(ENV_PUSH_FAILURE);
-        }
+        if (!new_tensors)
+            RUNTIME_ERROR(ENV_PUSH_FAILURE, "Memory Re-allocation failure");
 
         environ->tensors = new_tensors;
         environ->capacity = new_capacity;

@@ -1,7 +1,7 @@
+#include "error_codes.h"
 #include "random.h"
 
 #include <stdint.h>
-#include <stdio.h>
 #include <stdlib.h>
 
 // PCG64 pseudo random number
@@ -36,12 +36,10 @@ static inline void prng_seed(PRNG *rng, uint64_t seed) {
 
 PRNG *rng_init(uint64_t seed) {
     PRNG *rng = malloc(sizeof(PRNG));
-    if (!rng) {
-        printf("Failure to allocate PRNG\n");
-        exit(PRNG_INIT_FAILURE);
-    }
-    prng_seed(rng, seed);
+    if (!rng)
+        RUNTIME_ERROR(PRNG_INIT_FAILURE, "Failure to allocate PRNG");
 
+    prng_seed(rng, seed);
     return rng;
 }
 

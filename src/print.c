@@ -1,6 +1,7 @@
 #include "print.h"
 #include "array.h"
 #include "autograd.h"
+#include "error_codes.h"
 #include "tensor.h"
 
 #include <stdbool.h>
@@ -93,10 +94,8 @@ void print_array(const ndArray *array) {
     }
 
     size_t *idx = malloc(get_ndim(array) * sizeof(size_t));
-    if (!idx) {
-        printf("Failed to create index buffer\n");
-        exit(ARRAY_INIT_FAILURE);
-    }
+    if (!idx)
+        RUNTIME_ERROR(ARRAY_INIT_FAILURE, "Failed to create index buffer");
 
     for (int d = 0; d < get_ndim(array); d++) {
         idx[d] = 0;

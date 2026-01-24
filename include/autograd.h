@@ -4,11 +4,6 @@
 #include "tensor.h"
 #include <stddef.h>
 
-#define BACKWARD_FN_INIT_FAILURE 1
-#define NEXT_FNS_INIT_FAILURE 2
-#define GRAD_INIT_FAILURE 3
-#define INVALID_BACKWARD_PASS 4
-
 typedef Tensor **(*CallableGradFn)(Tensor **inputs, Tensor **outputs,
                                    Tensor **input_grads, size_t num_inputs,
                                    size_t num_outputs);

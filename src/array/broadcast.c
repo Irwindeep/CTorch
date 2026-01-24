@@ -1,4 +1,5 @@
 #include "array.h"
+#include "error_codes.h"
 
 #include <stddef.h>
 #include <stdio.h>
@@ -26,18 +27,14 @@ bool broadcastable(const size_t *shape1, const size_t *shape2, int ndim1,
 
 size_t *broadcast_shape(const size_t *shape1, const size_t *shape2, int ndim1,
                         int ndim2) {
-    if (!broadcastable(shape1, shape2, ndim1, ndim2)) {
-        printf("Dimensions not broadcastable\n");
-        exit(NON_BROADCASTABLE_ARRAYS);
-    }
+    if (!broadcastable(shape1, shape2, ndim1, ndim2))
+        RUNTIME_ERROR(NON_BROADCASTABLE_ARRAYS, "Dimensions not broadcastable");
 
     int ndim = (ndim1 > ndim2) ? ndim1 : ndim2;
     size_t *shape = malloc(ndim * sizeof(size_t));
 
-    if (shape == NULL) {
-        printf("Failed to initialize array shape\n");
-        exit(ARRAY_INIT_FAILURE);
-    }
+    if (shape == NULL)
+        RUNTIME_ERROR(ARRAY_INIT_FAILURE, "Failed to initialize array shape");
 
     for (int i = 0; i < ndim; i++) {
         int idx1 = ndim1 - 1 - i;

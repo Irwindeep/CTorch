@@ -1,6 +1,6 @@
 #include "callable_grads.h"
 #include "array.h"
-#include "autograd.h"
+#include "error_codes.h"
 #include "tensor.h"
 
 #include <stddef.h>
@@ -10,10 +10,9 @@
 Tensor **_accumulate_grad_fn(Tensor **inputs, Tensor **outputs,
                              Tensor **input_grads, size_t num_inputs,
                              size_t num_outputs) {
-    if (num_inputs != 1 || num_outputs != 0) {
-        printf("Invalid number of inputs/outputs for _accumulate_grad_fn\n");
-        exit(INVALID_NUM_INPUTS_OUTPUTS);
-    }
+    if (num_inputs != 1 || num_outputs != 0)
+        RUNTIME_ERROR(INVALID_NUM_INPUTS_OUTPUTS,
+                      "Invalid number of inputs/outputs");
 
     Tensor *tensor = inputs[0];
     Tensor *grad = input_grads[0];
@@ -34,16 +33,14 @@ Tensor **_accumulate_grad_fn(Tensor **inputs, Tensor **outputs,
 
 Tensor **_add_grad_fn(Tensor **inputs, Tensor **outputs, Tensor **input_grads,
                       size_t num_inputs, size_t num_outputs) {
-    if (num_inputs != 1 || num_outputs != 2) {
-        printf("Invalid number of inputs/outputs for _add_grad_fn\n");
-        exit(INVALID_NUM_INPUTS_OUTPUTS);
-    }
+    if (num_inputs != 1 || num_outputs != 2)
+        RUNTIME_ERROR(INVALID_NUM_INPUTS_OUTPUTS,
+                      "Invalid number of inputs/outputs");
 
     Tensor **output_grads = malloc(num_outputs * sizeof(Tensor *));
-    if (!output_grads) {
-        printf("Failure to allocate gradients tensor\n");
-        exit(GRAD_INIT_FAILURE);
-    }
+    if (!output_grads)
+        RUNTIME_ERROR(GRAD_INIT_FAILURE, "Failure to allocate gradient tensor");
+
     ndArray *grad = get_tensor_data(input_grads[0]);
 
     for (size_t i = 0; i < num_outputs; i++) {
@@ -62,10 +59,9 @@ Tensor **_add_grad_fn(Tensor **inputs, Tensor **outputs, Tensor **input_grads,
 
 Tensor **_mul_grad_fn(Tensor **inputs, Tensor **outputs, Tensor **input_grads,
                       size_t num_inputs, size_t num_outputs) {
-    if (num_inputs != 1 || num_outputs != 2) {
-        printf("Invalid number of inputs/outputs for _mul_grad_fn\n");
-        exit(INVALID_NUM_INPUTS_OUTPUTS);
-    }
+    if (num_inputs != 1 || num_outputs != 2)
+        RUNTIME_ERROR(INVALID_NUM_INPUTS_OUTPUTS,
+                      "Invalid number of inputs/outputs");
 
     Tensor **output_grads = malloc(num_outputs * sizeof(Tensor *));
     if (!output_grads) {
@@ -93,10 +89,9 @@ Tensor **_mul_grad_fn(Tensor **inputs, Tensor **outputs, Tensor **input_grads,
 
 Tensor **_neg_grad_fn(Tensor **inputs, Tensor **outputs, Tensor **input_grads,
                       size_t num_inputs, size_t num_outputs) {
-    if (num_inputs != 1 || num_outputs != 1) {
-        printf("Invalid number of inputs/outputs for _neg_grad_fn\n");
-        exit(INVALID_NUM_INPUTS_OUTPUTS);
-    }
+    if (num_inputs != 1 || num_outputs != 1)
+        RUNTIME_ERROR(INVALID_NUM_INPUTS_OUTPUTS,
+                      "Invalid number of inputs/outputs");
 
     Tensor **output_grads = malloc(num_outputs * sizeof(Tensor *));
     if (!output_grads) {
@@ -120,10 +115,9 @@ Tensor **_neg_grad_fn(Tensor **inputs, Tensor **outputs, Tensor **input_grads,
 
 Tensor **_inv_grad_fn(Tensor **inputs, Tensor **outputs, Tensor **input_grads,
                       size_t num_inputs, size_t num_outputs) {
-    if (num_inputs != 1 || num_outputs != 1) {
-        printf("Invalid number of inputs/outputs for _inv_grad_fn\n");
-        exit(INVALID_NUM_INPUTS_OUTPUTS);
-    }
+    if (num_inputs != 1 || num_outputs != 1)
+        RUNTIME_ERROR(INVALID_NUM_INPUTS_OUTPUTS,
+                      "Invalid number of inputs/outputs");
 
     Tensor **output_grads = malloc(num_outputs * sizeof(Tensor *));
     if (!output_grads) {

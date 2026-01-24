@@ -4,15 +4,6 @@
 #include <stdbool.h>
 #include <stddef.h>
 
-#define ARRAY_INIT_FAILURE 1
-#define INVALID_IDX 2
-#define NON_BROADCASTABLE_ARRAYS 3
-#define SHAPE_MISMATCH 4
-#define INVALID_ARRAY 5
-#define INVALID_DTYPE 6
-#define REPEATED_ARRAY_DIMS 7
-#define INVALID_DIM 8
-
 typedef enum DType {
     DTYPE_INT,
     DTYPE_FLOAT,

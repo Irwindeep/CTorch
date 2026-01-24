@@ -1,5 +1,6 @@
 #include "random.h"
 #include "array.h"
+#include "error_codes.h"
 #include "tensor.h"
 
 #include <math.h>
@@ -17,10 +18,8 @@ static inline float prng_uniform_f(PRNG *rng) {
 
 Tensor *uniform(PRNG *rng, int ndim, const size_t *shape, DType dtype,
                 bool requires_grad, Environment *environ) {
-    if (dtype != DTYPE_DOUBLE && dtype != DTYPE_FLOAT) {
-        printf("Invalid dtype for uniform tensor\n");
-        exit(INVALID_DTYPE);
-    }
+    if (dtype != DTYPE_DOUBLE && dtype != DTYPE_FLOAT)
+        RUNTIME_ERROR(INVALID_DTYPE, "Invalid dtype for uniform tensor");
 
     ndArray *data = array_init(ndim, shape, dtype);
     size_t total_size = get_total_size(data);
@@ -106,10 +105,8 @@ static inline float prng_randn_f(PRNG *rng) {
 
 Tensor *randn(PRNG *rng, int ndim, const size_t *shape, DType dtype,
               bool requires_grad, Environment *environ) {
-    if (dtype != DTYPE_DOUBLE && dtype != DTYPE_FLOAT) {
-        printf("Invalid dtype for randn tensor\n");
-        exit(INVALID_DTYPE);
-    }
+    if (dtype != DTYPE_DOUBLE && dtype != DTYPE_FLOAT)
+        RUNTIME_ERROR(INVALID_DTYPE, "Invalid dtype for randn tensor");
 
     ndArray *data = array_init(ndim, shape, dtype);
     size_t total_size = get_total_size(data);
@@ -195,10 +192,8 @@ static inline long pcg64_randint_l(PRNG *rng, long low, long high) {
 
 Tensor *randint(PRNG *rng, int ndim, const size_t *shape, long int low,
                 long int high, DType dtype, Environment *environ) {
-    if (dtype != DTYPE_INT && dtype != DTYPE_LONG) {
-        printf("Invalid dtype for randint tensor\n");
-        exit(INVALID_DTYPE);
-    }
+    if (dtype != DTYPE_INT && dtype != DTYPE_LONG)
+        RUNTIME_ERROR(INVALID_DTYPE, "Invalid dtype for randint tensor");
 
     ndArray *data = array_init(ndim, shape, dtype);
     size_t total_size = get_total_size(data);
