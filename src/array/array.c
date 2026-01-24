@@ -102,6 +102,7 @@ size_t get_total_size(const ndArray *array) { return array->total_size; }
 DType get_dtype(const ndArray *array) { return array->dtype; }
 size_t *get_shape(const ndArray *array) { return array->shape; }
 size_t *get_strides(const ndArray *array) { return array->strides; }
+void *get_array_data(const ndArray *array) { return array->data; }
 
 ArrayVal get_value(const ndArray *array, const size_t *indices) {
     const void *ptr = array_idx(array, indices);
@@ -142,6 +143,10 @@ void set_value(ndArray *array, const size_t *indices, ArrayVal value) {
         *(long *)ptr = value.long_val;
         break;
     }
+}
+
+void set_strides(ndArray *array, const size_t *strides) {
+    memcpy(array->strides, strides, array->ndim);
 }
 
 void populate_array(ndArray *array, const void *data) {

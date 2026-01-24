@@ -46,9 +46,11 @@ size_t get_total_size(const ndArray *array);
 DType get_dtype(const ndArray *array);
 size_t *get_shape(const ndArray *array);
 size_t *get_strides(const ndArray *array);
+void *get_array_data(const ndArray *array);
 
 ArrayVal get_value(const ndArray *array, const size_t *indices);
 void set_value(ndArray *array, const size_t *indices, ArrayVal value);
+void set_strides(ndArray *array, const size_t *strides);
 
 void populate_array(ndArray *array, const void *data);
 void offset_to_index(size_t offset, size_t *idx, const size_t *shape, int ndim);

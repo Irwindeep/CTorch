@@ -18,6 +18,9 @@ Tensor *env_pop(Environment *environ);
 Tensor *tensor_init(ndArray *data, bool requires_grad, Environment *environ);
 void free_tensor(Tensor *tensor);
 
+void save_tensor(Tensor *tensor, const char *path);
+Tensor *load_tensor(const char *path, bool requires_grad, Environment *environ);
+
 ndArray *get_tensor_data(const Tensor *tensor);
 Tensor *get_tensor_grad(const Tensor *tensor);
 

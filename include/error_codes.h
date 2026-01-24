@@ -20,6 +20,9 @@ typedef enum {
     DEPENDENCY_ARR_INIT_FAILURE = 203,
     ENV_INIT_FAILURE = 204,
     ENV_PUSH_FAILURE = 205,
+    FILE_WRITE_FAILURE = 206,
+    FILE_READ_FAILURE = 207,
+    FILE_FORMAT_ERROR = 208,
 
     /* autograd related error codes 30<x> */
     BACKWARD_FN_INIT_FAILURE = 301,

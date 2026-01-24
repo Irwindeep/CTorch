@@ -5,6 +5,7 @@
 
 #include <stdbool.h>
 #include <stddef.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -15,6 +16,13 @@ struct Tensor {
     BackwardFn *backward_fn;
     Environment *environ;
     bool requires_grad;
+};
+
+struct TensorHeader {
+    char magic[8]; // "C-TENSOR"
+    uint32_t dtype;
+    uint32_t ndim;
+    uint64_t buffer_elems;
 };
 
 Tensor *tensor_init(ndArray *data, bool requires_grad, Environment *environ) {
@@ -51,6 +59,90 @@ void free_tensor(Tensor *tensor) {
     free_backward_fn(tensor->backward_fn);
 
     free(tensor);
+}
+
+void save_tensor(Tensor *tensor, const char *path) {
+    FILE *file = fopen(path, "wb");
+    if (!file)
+        RUNTIME_ERRORF(FILE_WRITE_FAILURE,
+                       "Failure to open write binary file: %s", path);
+
+    ndArray *array = tensor->data;
+
+    DType dtype = get_dtype(array);
+    int ndim = get_ndim(array);
+    const size_t *shape = get_shape(array);
+    const size_t *strides = get_strides(array);
+    size_t total_size = get_total_size(array);
+    size_t itemsize = get_itemsize(array);
+    const void *data = get_array_data(array);
+
+    struct TensorHeader header = {
+        .magic = "C-TENSOR",
+        .dtype = (uint32_t)dtype,
+        .ndim = (uint32_t)ndim,
+        .buffer_elems = (uint64_t)total_size,
+    };
+
+    fwrite(&header, sizeof(header), 1, file);
+
+    for (uint32_t d = 0; d < header.ndim; d++) {
+        uint64_t dim = (uint64_t)shape[d];
+        fwrite(&dim, sizeof(uint64_t), 1, file);
+    }
+
+    for (uint32_t d = 0; d < header.ndim; d++) {
+        uint64_t stride = (uint64_t)strides[d];
+        fwrite(&stride, sizeof(uint64_t), 1, file);
+    }
+
+    fwrite(data, itemsize, total_size, file);
+
+    fclose(file);
+}
+
+Tensor *load_tensor(const char *path, bool requires_grad,
+                    Environment *environ) {
+    FILE *file = fopen(path, "rb");
+    if (!file)
+        RUNTIME_ERRORF(FILE_READ_FAILURE,
+                       "Failure to open read binary file: %s", path);
+
+    struct TensorHeader header;
+    fread(&header, sizeof(header), 1, file);
+
+    if (memcmp(header.magic, "C-TENSOR", 8) != 0)
+        RUNTIME_ERROR(FILE_FORMAT_ERROR, "Invalid tensor file identifier");
+
+    int ndim = (int)header.ndim;
+    uint64_t total_elems = header.buffer_elems;
+    DType dtype = (DType)header.dtype;
+
+    size_t shape[ndim], strides[ndim];
+    for (uint32_t d = 0; d < ndim; d++) {
+        uint64_t dim;
+        fread(&dim, sizeof(uint64_t), 1, file);
+        shape[d] = (size_t)dim;
+    }
+
+    for (uint32_t d = 0; d < ndim; d++) {
+        uint64_t stride;
+        fread(&stride, sizeof(uint64_t), 1, file);
+        strides[d] = (size_t)stride;
+    }
+
+    ndArray *array = array_init(ndim, shape, dtype);
+    set_strides(array, strides);
+
+    size_t itemsize = get_itemsize(array);
+    void *data = get_array_data(array);
+
+    fread(data, itemsize, total_elems, file);
+
+    fclose(file);
+
+    Tensor *tensor = tensor_init(array, requires_grad, environ);
+    return tensor;
 }
 
 ndArray *get_tensor_data(const Tensor *tensor) { return tensor->data; }
