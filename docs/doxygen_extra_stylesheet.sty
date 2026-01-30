@@ -1,0 +1,41 @@
+\RequirePackage[most]{tcolorbox}
+
+
+\AtBeginDocument{
+	\renewcommand{\familydefault}{\rmdefault}
+	\normalfont
+	\rmfamily
+
+	\RequirePackage{inconsolata}
+	\renewcommand{\ttdefault}{zi4}
+
+	\RequirePackage{microtype}
+
+	\setcounter{tocdepth}{2}
+
+	\let\origfootnotesize\footnotesize
+	\renewcommand{\footnotesize}{\small}
+
+	\hypersetup{
+		colorlinks=true,
+		linkcolor=[RGB]{0,90,140},
+		urlcolor=[RGB]{0,120,90},
+		citecolor=[RGB]{120,0,120}
+	}
+}
+
+\definecolor{codebg}{RGB}{250,250,248}
+\definecolor{codeframe}{RGB}{220,220,220}
+
+\renewenvironment{DoxyCode}[1]{%
+	\begin{tcolorbox}[
+			colback=codebg,
+			colframe=codeframe,
+			arc=3pt,
+			boxrule=0.5pt,
+			breakable
+		]
+		\ttfamily\small
+		}{%
+	\end{tcolorbox}
+}

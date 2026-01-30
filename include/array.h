@@ -83,7 +83,7 @@ ndArray *negative(ndArray *array);
 ndArray *inverse(ndArray *array);
 ndArray *matmul(ndArray *arr1, ndArray *arr2);
 
-void transpose(ndArray *array, const int *dims);
+ndArray *transpose(ndArray *array, const int *dims);
 ndArray *array_sum(ndArray *array);
 ndArray *array_sum_dim(ndArray *array, int dim, bool keepdims);
 

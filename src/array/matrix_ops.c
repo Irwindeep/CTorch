@@ -111,10 +111,11 @@ static bool _repeated_dims(const int *dims, int ndim) {
     return false;
 }
 
-void transpose(ndArray *array, const int *dims) {
-    size_t *shape = get_shape(array);
-    size_t *strides = get_strides(array);
-    int ndim = get_ndim(array);
+ndArray *transpose(ndArray *array, const int *dims) {
+    ndArray *result = copy_array(array);
+    size_t *shape = get_shape(result);
+    size_t *strides = get_strides(result);
+    int ndim = get_ndim(result);
 
     size_t new_shape[ndim], new_strides[ndim];
 
@@ -134,4 +135,6 @@ void transpose(ndArray *array, const int *dims) {
         shape[d] = new_shape[d];
         strides[d] = new_strides[d];
     }
+
+    return result;
 };

@@ -196,7 +196,7 @@ void test_array_transpose() {
     ndArray *array = array_init(ndim, shape, DTYPE_FLOAT);
     populate_array(array, data);
 
-    transpose(array, (int[]){1, 2, 0});
+    ndArray *transposed_arr = transpose(array, (int[]){1, 2, 0});
     ndArray *array_T = array_init(ndim, (size_t[]){3, 3, 2}, DTYPE_FLOAT);
     const float data1[] = {0.3140f,  -1.8322f, 0.1307f,  -1.5453f, 0.0120f,
                            0.0210f,  -0.8602f, 1.5252f,  0.2899f,  0.3432f,
@@ -204,9 +204,10 @@ void test_array_transpose() {
                            -0.7817f, 0.2890f,  0.1935f};
     populate_array(array_T, data1);
 
-    CU_ASSERT(array_equal(array, array_T));
+    CU_ASSERT(array_equal(transposed_arr, array_T));
     free_array(array);
     free_array(array_T);
+    free_array(transposed_arr);
 }
 
 void test_array_sum() {
