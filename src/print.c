@@ -133,11 +133,14 @@ void print_tensor(const Tensor *tensor) {
     BackwardFn *backward_fn = get_backward_fn(tensor);
 
     if (backward_fn)
-        printf(", grad_fn=<%s>)\n", get_backward_name(backward_fn));
+        printf(", grad_fn=<%s>, size=", get_backward_name(backward_fn));
     else if (requires_grad)
-        printf(", requires_grad=True)\n");
+        printf(", requires_grad=True, size=");
     else
-        printf(")\n");
+        printf(", size=");
+
+    print_shape(get_tensor_data(tensor));
+    printf(")\n");
 }
 
 void print_tensor_shape(const Tensor *tensor) {
