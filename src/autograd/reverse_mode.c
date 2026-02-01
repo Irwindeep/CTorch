@@ -64,8 +64,8 @@ static void _gradient_backward(Tensor **inputs, Tensor **grads,
     free(op_grads);
 }
 
-Tensor **gradient(Tensor **inputs, Tensor **outputs, Tensor **grad_outputs,
-                  size_t num_inputs, size_t num_outputs, bool create_graph) {
+Tensor **gradient(size_t num_inputs, Tensor **inputs, size_t num_outputs,
+                  Tensor **outputs, Tensor **grad_outputs, bool create_graph) {
     for (size_t i = 0; i < num_inputs; i++) {
         bool requires_grad = get_requires_grad(inputs[i]);
         if (!requires_grad)
