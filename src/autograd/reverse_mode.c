@@ -4,15 +4,101 @@
 #include "tensor.h"
 
 #include <CUnit/TestRun.h>
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 
-Tensor **gradient(Tensor **inputs, Tensor **outputs, Tensor **input_grads,
-                  size_t num_inputs, size_t num_outputs);
+static inline ssize_t find_input(const Tensor *t, Tensor **inputs,
+                                 size_t num_inputs) {
+    for (size_t i = 0; i < num_inputs; i++)
+        if (inputs[i] == t)
+            return (ssize_t)i;
+    return -1;
+}
 
-static void _backward(Tensor **inputs, Tensor **grads,
-                      BackwardFn *backward_fn) {
+static void _gradient_backward(Tensor **inputs, Tensor **grads,
+                               size_t num_inputs, Tensor **cur_inputs,
+                               Tensor **cur_grads, BackwardFn *backward_fn,
+                               bool create_graph) {
+    size_t num_fn_inputs = get_backward_inputs(backward_fn);
+    size_t num_fn_outputs = get_backward_outputs(backward_fn);
+
+    Tensor **outputs = get_backward_fn_op_tensors(backward_fn);
+    BackwardFn **next_fns = get_next_functions(backward_fn);
+
+    CallableGradFn grad_fn = get_grad_fn(backward_fn);
+
+    Tensor **op_grads = grad_fn(cur_inputs, outputs, cur_grads, num_fn_inputs,
+                                num_fn_outputs, create_graph);
+
+    for (size_t i = 0; i < num_fn_outputs; i++) {
+        const Tensor *out = outputs[i];
+        Tensor *g = op_grads[i];
+
+        /* Is this one of the requested inputs? */
+        ssize_t idx = find_input(out, inputs, num_inputs);
+        if (idx >= 0) {
+            if (grads[idx])
+                grads[idx] = tensor_add(grads[idx], g);
+            else
+                grads[idx] = g;
+            continue;
+        }
+
+        BackwardFn *next_fn = next_fns[i];
+        if (!next_fn)
+            continue;
+
+        Tensor **next_inputs = get_backward_fn_ip_tensors(next_fn);
+        size_t next_n = get_backward_inputs(next_fn);
+
+        Tensor *next_grads[next_n];
+        for (size_t j = 0; j < next_n; j++)
+            next_grads[j] = g;
+
+        _gradient_backward(inputs, grads, num_inputs, next_inputs, next_grads,
+                           next_fn, create_graph);
+    }
+
+    free(op_grads);
+}
+
+Tensor **gradient(Tensor **inputs, Tensor **outputs, Tensor **grad_outputs,
+                  size_t num_inputs, size_t num_outputs, bool create_graph) {
+    for (size_t i = 0; i < num_inputs; i++) {
+        bool requires_grad = get_requires_grad(inputs[i]);
+        if (!requires_grad)
+            RUNTIME_ERRORF(INVALID_BACKWARD_PASS,
+                           "Input tensor at index `%zu` does not requires_grad",
+                           i);
+    }
+    for (size_t i = 0; i < num_outputs; i++) {
+        bool requires_grad = get_requires_grad(outputs[i]);
+        if (!requires_grad)
+            RUNTIME_ERRORF(
+                INVALID_BACKWARD_PASS,
+                "Output tensor at index `%zu` does not requires_grad", i);
+    }
+
+    Tensor **grads = calloc(num_inputs, sizeof(Tensor *));
+    if (!grads)
+        RUNTIME_ERROR(GRAD_INIT_FAILURE, "Failed to allocate gradients");
+
+    for (size_t i = 0; i < num_outputs; i++) {
+        BackwardFn *fn = get_backward_fn(outputs[i]);
+        if (!fn)
+            continue;
+
+        _gradient_backward(inputs, grads, num_inputs, (Tensor *[]){outputs[i]},
+                           (Tensor *[]){grad_outputs[i]}, fn, create_graph);
+    }
+
+    return grads;
+}
+
+static inline void _backward(Tensor **inputs, Tensor **grads,
+                             BackwardFn *backward_fn) {
     size_t num_inputs = get_backward_inputs(backward_fn),
            num_outputs = get_backward_outputs(backward_fn);
 
@@ -21,7 +107,7 @@ static void _backward(Tensor **inputs, Tensor **grads,
 
     CallableGradFn grad_fn = get_grad_fn(backward_fn);
     Tensor **op_grads =
-        grad_fn(inputs, outputs, grads, num_inputs, num_outputs);
+        grad_fn(inputs, outputs, grads, num_inputs, num_outputs, false);
 
     size_t i = 0;
     while (i < num_outputs) {

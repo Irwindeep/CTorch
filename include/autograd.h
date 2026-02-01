@@ -6,7 +6,7 @@
 
 typedef Tensor **(*CallableGradFn)(Tensor **inputs, Tensor **outputs,
                                    Tensor **input_grads, size_t num_inputs,
-                                   size_t num_outputs);
+                                   size_t num_outputs, bool create_graph);
 
 BackwardFn *backward_fn_init(CallableGradFn grad_fn, Tensor **input_tensors,
                              Tensor **output_tensors, size_t num_inputs,
@@ -24,8 +24,8 @@ CallableGradFn get_grad_fn(const BackwardFn *backward_fn);
 
 void set_next_functions(BackwardFn *backward_fn, BackwardFn **next_functions);
 
-Tensor **gradient(Tensor **inputs, Tensor **outputs, Tensor **input_grads,
-                  size_t num_inputs, size_t num_outputs);
+Tensor **gradient(Tensor **inputs, Tensor **outputs, Tensor **grad_outputs,
+                  size_t num_inputs, size_t num_outputs, bool create_graph);
 void backward(Tensor *tensor, Tensor *grad);
 
 BackwardFn *AccumulateGrad(Tensor *input);

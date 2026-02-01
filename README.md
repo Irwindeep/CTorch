@@ -7,4 +7,4 @@
 - [x] Backpropagation loop
 - [x] Random tensor initialization
 - [ ] nn Modules
-- [ ] Autograd pipeline for higher order derivatives
+- [x] Autograd pipeline for higher order derivatives
