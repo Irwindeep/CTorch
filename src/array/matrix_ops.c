@@ -84,7 +84,7 @@ ndArray *matmul(ndArray *arr1, ndArray *arr2) {
     int batch_ndim = (batch_ndim1 > batch_ndim2) ? batch_ndim1 : batch_ndim2;
 
     size_t *batch_shape = broadcast_shape(get_shape(arr1), get_shape(arr2),
-                                          get_ndim(arr1), get_ndim(arr2));
+                                          batch_ndim1, batch_ndim2);
     size_t shape[batch_ndim + 2];
 
     for (int i = 0; i < batch_ndim; i++)
