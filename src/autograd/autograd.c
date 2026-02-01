@@ -14,6 +14,10 @@ struct BackwardFn {
     BackwardFn **next_functions;
     Tensor **input_tensors;  // inputs to backward function
     Tensor **output_tensors; // outputs of backward function
+
+    Ctx ctx_kind;
+    void *ctx;
+
     char *name;
 };
 
@@ -41,6 +45,9 @@ BackwardFn *backward_fn_init(CallableGradFn grad_fn, Tensor **input_tensors,
     backward_fn->num_outputs = num_outputs;
     backward_fn->next_functions = NULL;
     backward_fn->name = strdup(name);
+
+    backward_fn->ctx_kind = NULL_CTX;
+    backward_fn->ctx = NULL;
 
     return backward_fn;
 }
@@ -76,6 +83,10 @@ void free_backward_fn(BackwardFn *backward_fn) {
     free(backward_fn->output_tensors);
     free(backward_fn->next_functions);
     free(backward_fn->name);
+
+    if (backward_fn->ctx)
+        free_ctx(backward_fn->ctx, backward_fn->ctx_kind);
+
     free(backward_fn);
 }
 
@@ -105,6 +116,17 @@ Tensor **get_backward_fn_op_tensors(const BackwardFn *backward_fn) {
 
 CallableGradFn get_grad_fn(const BackwardFn *backward_fn) {
     return backward_fn->grad_fn;
+}
+
+void *get_ctx(const BackwardFn *backward_fn) { return backward_fn->ctx; }
+
+Ctx get_ctx_kind(const BackwardFn *backward_fn) {
+    return backward_fn->ctx_kind;
+}
+
+void set_ctx(BackwardFn *backward_fn, void *ctx, Ctx ctx_kind) {
+    backward_fn->ctx = deep_copy_ctx(ctx, ctx_kind);
+    backward_fn->ctx_kind = ctx_kind;
 }
 
 void set_next_functions(BackwardFn *backward_fn, BackwardFn **next_functions) {

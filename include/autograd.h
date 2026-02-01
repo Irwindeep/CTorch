@@ -4,6 +4,19 @@
 #include "tensor.h"
 #include <stddef.h>
 
+typedef enum Ctx {
+    NULL_CTX,
+    TRANSPOSE_CTX,
+} Ctx;
+
+typedef struct TransposeCtx {
+    int ndim;
+    int *dims;
+} TransposeCtx;
+
+void *deep_copy_ctx(void *ctx, Ctx ctx_kind);
+void free_ctx(void *ctx, Ctx ctx_kind);
+
 typedef Tensor **(*CallableGradFn)(Tensor **inputs, Tensor **outputs,
                                    Tensor **input_grads, size_t num_inputs,
                                    size_t num_outputs, bool create_graph);
@@ -22,6 +35,10 @@ Tensor **get_backward_fn_ip_tensors(const BackwardFn *backward_fn);
 Tensor **get_backward_fn_op_tensors(const BackwardFn *backward_fn);
 CallableGradFn get_grad_fn(const BackwardFn *backward_fn);
 
+void *get_ctx(const BackwardFn *backward_fn);
+Ctx get_ctx_kind(const BackwardFn *backward_fn);
+
+void set_ctx(BackwardFn *backward_fn, void *ctx, Ctx ctx_kind);
 void set_next_functions(BackwardFn *backward_fn, BackwardFn **next_functions);
 
 Tensor **gradient(size_t num_inputs, Tensor **inputs, size_t num_outputs,
@@ -37,5 +54,9 @@ BackwardFn *NegBackward(Tensor **input_tensors, Tensor **output_tensors,
                         size_t num_inputs, size_t num_outputs);
 BackwardFn *InvBackward(Tensor **input_tensors, Tensor **output_tensors,
                         size_t num_inputs, size_t num_outputs);
+BackwardFn *MatMulBackward(Tensor **input_tensors, Tensor **output_tensors,
+                           size_t num_inputs, size_t num_outputs);
+BackwardFn *TransposeBackward(Tensor **input_tensors, Tensor **output_tensors,
+                              size_t num_inputs, size_t num_outputs);
 
 #endif // !AUTOGRAD_H
