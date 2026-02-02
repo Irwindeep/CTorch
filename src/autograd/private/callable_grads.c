@@ -14,6 +14,9 @@ Tensor **_accumulate_grad_fn(Tensor **inputs, Tensor **outputs,
         RUNTIME_ERROR(INVALID_NUM_INPUTS_OUTPUTS,
                       "Invalid number of inputs/outputs");
 
+    if (create_graph)
+        return NULL;
+
     Tensor *tensor = inputs[0];
     Tensor *grad = input_grads[0];
 
@@ -22,11 +25,6 @@ Tensor **_accumulate_grad_fn(Tensor **inputs, Tensor **outputs,
         zero_grad(tensor);
         tensor_grad = get_tensor_grad(tensor);
     }
-
-    if (create_graph)
-        RUNTIME_ERROR(
-            INVALID_GRAD,
-            "AccumlateGrad function called with parameter `create_graph=True`");
 
     ndArray *sum =
         array_add(get_tensor_data(tensor_grad), get_tensor_data(grad));
