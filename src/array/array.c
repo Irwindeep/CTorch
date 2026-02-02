@@ -13,7 +13,6 @@ const char *DTypeNames[] = {
     "DTYPE_LONG",
 };
 
-// ndArray struct
 struct ndArray {
     void *data;
     int ndim;
@@ -24,8 +23,12 @@ struct ndArray {
     DType dtype;
 };
 
-// array initialization
 ndArray *array_init(int ndim, const size_t *shape, DType dtype) {
+    if (ndim > MAX_NDIM)
+        RUNTIME_ERRORF(ARRAY_INIT_FAILURE,
+                       "Given array with ndim (%d) > MAX_NDIM (%d)", ndim,
+                       MAX_NDIM);
+
     ndArray *array = malloc(sizeof(ndArray));
     if (!array)
         RUNTIME_ERROR(ARRAY_INIT_FAILURE, "Failed to initialize array");
@@ -159,6 +162,14 @@ void offset_to_index(size_t offset, size_t *idx, const size_t *shape,
         idx[d] = offset % shape[d];
         offset /= shape[d];
     }
+}
+
+size_t index_to_offset(const size_t *idx, const size_t *strides, int ndim) {
+    size_t offset = 0;
+    for (int d = 0; d < ndim; d++)
+        offset += strides[d] * idx[d];
+
+    return offset;
 }
 
 ndArray *copy_array(const ndArray *array) {

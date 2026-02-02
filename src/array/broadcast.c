@@ -25,16 +25,10 @@ bool broadcastable(const size_t *shape1, const size_t *shape2, int ndim1,
     return true;
 }
 
-size_t *broadcast_shape(const size_t *shape1, const size_t *shape2, int ndim1,
-                        int ndim2) {
+void broadcast_shape(const size_t *shape1, const size_t *shape2, size_t *shape,
+                     int ndim1, int ndim2, int ndim) {
     if (!broadcastable(shape1, shape2, ndim1, ndim2))
         RUNTIME_ERROR(NON_BROADCASTABLE_ARRAYS, "Dimensions not broadcastable");
-
-    int ndim = (ndim1 > ndim2) ? ndim1 : ndim2;
-    size_t *shape = malloc(ndim * sizeof(size_t));
-
-    if (shape == NULL)
-        RUNTIME_ERROR(ARRAY_INIT_FAILURE, "Failed to initialize array shape");
 
     for (int i = 0; i < ndim; i++) {
         int idx1 = ndim1 - 1 - i;
@@ -44,8 +38,21 @@ size_t *broadcast_shape(const size_t *shape1, const size_t *shape2, int ndim1,
         size_t s2 = (idx2 >= 0) ? shape2[idx2] : 1;
         shape[ndim - i - 1] = (s1 > s2) ? s1 : s2;
     }
+}
 
-    return shape;
+void broadcasted_strides(size_t *strides, const size_t *src_strides,
+                         const size_t *src_shape, int src_ndim,
+                         const size_t *dst_shape, int dst_ndim) {
+    int dim = dst_ndim - src_ndim;
+
+    for (int i = 0; i < dst_ndim; i++) {
+        if (i < dim)
+            strides[i] = 0;
+        else if (src_shape[i - dim] == 1)
+            strides[i] = 0;
+        else
+            strides[i] = src_strides[i - dim];
+    }
 }
 
 void get_broadcasted_indices(const size_t *shape1, const size_t *shape2,

@@ -54,6 +54,10 @@ void set_strides(ndArray *array, const size_t *strides);
 
 void populate_array(ndArray *array, const void *data);
 void offset_to_index(size_t offset, size_t *idx, const size_t *shape, int ndim);
+
+size_t index_to_offset(const size_t *idx, const size_t *strides, int ndim);
+
+/** Creates and returns a copy of the original @p array. */
 ndArray *copy_array(const ndArray *array);
 
 // some important arrays
@@ -67,8 +71,18 @@ bool array_equal(const ndArray *arr1, const ndArray *arr2);
 // array operations
 bool broadcastable(const size_t *shape1, const size_t *shape2, int ndim1,
                    int ndim2);
-size_t *broadcast_shape(const size_t *shape1, const size_t *shape2, int ndim1,
-                        int ndim2);
+
+void broadcast_shape(const size_t *shape1, const size_t *shape2, size_t *shape,
+                     int ndim1, int ndim2, int ndim);
+
+void broadcasted_strides(size_t *strides, const size_t *src_strides,
+                         const size_t *src_shape, int src_ndim,
+                         const size_t *dst_shape, int dst_ndim);
+
+/**
+ * @brief Get indices corresponding to broadcasted array for array operations
+ * with broadcasting.
+ */
 void get_broadcasted_indices(const size_t *shape1, const size_t *shape2,
                              const size_t *shape, int ndim1, int ndim2,
                              int ndim, size_t *idx1, size_t *idx2, size_t *idx,

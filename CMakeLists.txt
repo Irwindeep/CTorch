@@ -3,11 +3,13 @@ project(CTorch C)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+find_package(OpenMP REQUIRED)
+
 file(GLOB_RECURSE C_TORCH_SOURCES CONFIGURE_DEPENDS "src/*.c")
 
 add_library(ctorch ${C_TORCH_SOURCES})
 target_include_directories(ctorch PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
-target_link_libraries(ctorch PUBLIC m)
+target_link_libraries(ctorch PUBLIC m OpenMP::OpenMP_C)
 
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(CUNIT REQUIRED cunit)
