@@ -14,6 +14,6 @@ typedef struct ProgressBar ProgressBar;
 ProgressBar *progress_init(int total);
 void progress_update(const ProgressBar *bar, int current, const char *desc,
                      const char *postfix);
-void progress_finish();
+void progress_finish(ProgressBar *bar);
 
 #endif // !PBAR_H

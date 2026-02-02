@@ -96,4 +96,7 @@ void progress_update(const ProgressBar *bar, int current, const char *desc,
     fflush(stdout);
 }
 
-void progress_finish() { printf("\n"); }
+void progress_finish(ProgressBar *bar) {
+    free(bar);
+    printf("\n");
+}
