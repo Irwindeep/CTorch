@@ -4,7 +4,17 @@
 
 #include <stdbool.h>
 
-Tensor *tensor_transpose(Tensor *tensor, const int *dims) {
+Tensor *tensor_transpose(Tensor *tensor, int *dims) {
+    int ndim = get_tensor_ndim(tensor);
+
+    int _dims[ndim];
+    if (!dims) {
+        for (int d = 0; d < ndim; d++)
+            _dims[d] = ndim - d - 1;
+
+        dims = _dims;
+    }
+
     ndArray *_data = get_tensor_data(tensor);
     bool requires_grad = get_requires_grad(tensor);
     Environment *env = get_tensor_environ(tensor);
