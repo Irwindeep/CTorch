@@ -9,6 +9,9 @@
 
 ndArray *broadcast_grad_data(ndArray *data, int ndim, const size_t *shape) {
     int ndims_added = get_ndim(data) - ndim;
+    if (ndims_added < 0)
+        return data;
+
     for (int i = 0; i < ndims_added; i++) {
         ndArray *tmp = data;
         data = array_sum_dim(data, 0, false);
