@@ -13,9 +13,11 @@
   - [ ] Activations
   - [ ] Loss Functions
 - [x] Autograd pipeline for higher order derivatives
-- [ ] Parallelize with OpenMP
+- [x] Parallelize with OpenMP
 - [ ] Visualization Module
   - [ ] Line plots
   - [ ] Heatmaps
   - [ ] Imshow
+  - [ ] Dot graphs for forward and backward mode computation graphs
+  - [ ] Dot graphs for neural nets
 - [ ] Prepare documentation
