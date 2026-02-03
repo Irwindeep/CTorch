@@ -4,6 +4,7 @@
 #include "error_codes.h"
 #include "tensor.h"
 
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdlib.h>
 
@@ -252,6 +253,39 @@ Tensor **_matmul_grad_fn(Tensor **inputs, Tensor **outputs,
         }
         output_grads[i] = t;
     }
+
+    return output_grads;
+}
+
+Tensor **_sum_grad_fn(Tensor **inputs, Tensor **outputs, Tensor **input_grads,
+                      size_t num_inputs, size_t num_outputs,
+                      bool create_graph) {
+    if (num_inputs != 1 || num_outputs != 1)
+        RUNTIME_ERROR(INVALID_NUM_INPUTS_OUTPUTS,
+                      "Invalid number of inputs/outputs");
+
+    Tensor **output_grads = malloc(num_outputs * sizeof(Tensor *));
+    if (!output_grads)
+        RUNTIME_ERROR(GRAD_INIT_FAILURE, "Failure to allocate gradient tensor");
+
+    Tensor *t;
+    if (create_graph) {
+        Tensor *grad_tensor = input_grads[0];
+        Environment *env = get_tensor_environ(outputs[0]);
+        t = tensor_mul(grad_tensor, ones_like(outputs[0], false, env));
+    } else {
+        ndArray *grad = get_tensor_data(input_grads[0]);
+
+        int ndim = get_tensor_ndim(outputs[0]);
+        const size_t *shape = get_tensor_shape(outputs[0]);
+        DType dtype = get_tensor_dtype(outputs[0]);
+
+        ndArray *ones_array = ones(ndim, shape, dtype);
+        ndArray *data = array_mul(grad, ones_array);
+        t = tensor_init(data, false, get_tensor_environ(outputs[0]));
+        free_array(ones_array);
+    }
+    output_grads[0] = t;
 
     return output_grads;
 }

@@ -52,3 +52,19 @@ Tensor *tensor_matmul(Tensor *t1, Tensor *t2) {
 
     return tensor;
 }
+
+Tensor *tensor_sum(Tensor *tensor) {
+    ndArray *data_ = get_tensor_data(tensor);
+    bool requires_grad = get_requires_grad(tensor);
+    ndArray *data = array_sum(data_);
+
+    Tensor *new_tensor =
+        tensor_init(data, requires_grad, get_tensor_environ(tensor));
+    if (requires_grad) {
+        BackwardFn *backward_fn =
+            SumBackward((Tensor *[]){new_tensor}, (Tensor *[]){tensor}, 1, 1);
+        set_backward_fn(new_tensor, backward_fn);
+    }
+
+    return new_tensor;
+}

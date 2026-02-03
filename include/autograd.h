@@ -45,18 +45,18 @@ Tensor **gradient(size_t num_inputs, Tensor **inputs, size_t num_outputs,
                   Tensor **outputs, Tensor **grad_outputs, bool create_graph);
 void backward(Tensor *tensor, Tensor *grad);
 
+#define _DECLARE_BACKWARD_FN(NAME)                                             \
+    BackwardFn *NAME(Tensor **input_tensors, Tensor **output_tensors,          \
+                     size_t num_inputs, size_t num_outputs);
+
 BackwardFn *AccumulateGrad(Tensor *input);
-BackwardFn *AddBackward(Tensor **input_tensors, Tensor **output_tensors,
-                        size_t num_inputs, size_t num_outputs);
-BackwardFn *MulBackward(Tensor **input_tensors, Tensor **output_tensors,
-                        size_t num_inputs, size_t num_outputs);
-BackwardFn *NegBackward(Tensor **input_tensors, Tensor **output_tensors,
-                        size_t num_inputs, size_t num_outputs);
-BackwardFn *InvBackward(Tensor **input_tensors, Tensor **output_tensors,
-                        size_t num_inputs, size_t num_outputs);
-BackwardFn *MatMulBackward(Tensor **input_tensors, Tensor **output_tensors,
-                           size_t num_inputs, size_t num_outputs);
-BackwardFn *TransposeBackward(Tensor **input_tensors, Tensor **output_tensors,
-                              size_t num_inputs, size_t num_outputs);
+
+_DECLARE_BACKWARD_FN(AddBackward)
+_DECLARE_BACKWARD_FN(MulBackward)
+_DECLARE_BACKWARD_FN(NegBackward)
+_DECLARE_BACKWARD_FN(InvBackward)
+_DECLARE_BACKWARD_FN(MatMulBackward)
+_DECLARE_BACKWARD_FN(TransposeBackward)
+_DECLARE_BACKWARD_FN(SumBackward)
 
 #endif // !AUTOGRAD_H
