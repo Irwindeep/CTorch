@@ -42,6 +42,61 @@ static int format_value(char *buf, size_t n, const ndArray *array,
     return 0;
 }
 
+static inline void print_sep(bool multiline, int ndim, int dim, int base_indent,
+                             int indent) {
+    if (!multiline) {
+        printf(", ");
+        return;
+    }
+
+    printf(",\n");
+    if (ndim - dim > 2)
+        putchar('\n');
+
+    print_indent(base_indent + indent + 1);
+}
+
+static void print_rec(const ndArray *array, int dim, size_t *idx, int indent,
+                      int base_indent, int col_width) {
+    int ndim = get_ndim(array);
+
+    if (dim == ndim) {
+        char buf[64];
+        format_value(buf, sizeof(buf), array, idx);
+        printf("%*s", col_width, buf);
+        return;
+    }
+
+    size_t dim_len = get_shape(array)[dim];
+    bool multiline = (ndim - dim) > 1;
+
+    bool truncated = (dim_len > 2 * PRINT_EDGE_ITEMS + 1);
+
+    putchar('[');
+
+    size_t head = truncated ? PRINT_EDGE_ITEMS : dim_len;
+    for (size_t i = 0; i < head; ++i) {
+        if (i > 0)
+            print_sep(multiline, ndim, dim, base_indent, indent);
+
+        idx[dim] = i;
+        print_rec(array, dim + 1, idx, indent + 1, base_indent, col_width);
+    }
+
+    if (truncated) {
+        print_sep(multiline, ndim, dim, base_indent, indent);
+        printf("...");
+        for (size_t i = dim_len - PRINT_EDGE_ITEMS; i < dim_len; ++i) {
+            print_sep(multiline, ndim, dim, base_indent, indent);
+
+            idx[dim] = i;
+            print_rec(array, dim + 1, idx, indent + 1, base_indent, col_width);
+        }
+    }
+
+    putchar(']');
+}
+
 static void compute_max_width_rec(const ndArray *array, int dim, size_t *idx,
                                   int *max_width) {
     int ndim = get_ndim(array);
@@ -54,17 +109,17 @@ static void compute_max_width_rec(const ndArray *array, int dim, size_t *idx,
         return;
     }
 
-    size_t len = get_shape(array)[dim];
-    bool truncated = (dim < 2) && (len > 2 * PRINT_EDGE_ITEMS + 1);
+    size_t dim_len = get_shape(array)[dim];
+    bool truncated = (dim_len > 2 * PRINT_EDGE_ITEMS + 1);
 
-    size_t limit = truncated ? PRINT_EDGE_ITEMS : len;
-    for (size_t i = 0; i < limit; ++i) {
+    size_t head = truncated ? PRINT_EDGE_ITEMS : dim_len;
+    for (size_t i = 0; i < head; ++i) {
         idx[dim] = i;
         compute_max_width_rec(array, dim + 1, idx, max_width);
     }
 
     if (truncated) {
-        for (size_t i = len - PRINT_EDGE_ITEMS; i < len; ++i) {
+        for (size_t i = dim_len - PRINT_EDGE_ITEMS; i < dim_len; ++i) {
             idx[dim] = i;
             compute_max_width_rec(array, dim + 1, idx, max_width);
         }
@@ -81,51 +136,6 @@ static int compute_max_width(const ndArray *array) {
 
     compute_max_width_rec(array, 0, idx, &max_width);
     return max_width;
-}
-
-static void print_rec(const ndArray *array, int dim, size_t *idx, int indent,
-                      int base_indent, int col_width) {
-    int ndim = get_ndim(array);
-    if (dim == ndim) {
-        char buf[64];
-        format_value(buf, sizeof(buf), array, idx);
-        printf("%*s", col_width, buf);
-        return;
-    }
-
-    size_t dim_len = get_shape(array)[dim];
-    bool multiline = (ndim - dim) > 1;
-
-    putchar('[');
-
-    bool truncated = (dim < 2) && (dim_len > 2 * PRINT_EDGE_ITEMS + 1);
-
-    for (size_t i = 0; i < dim_len; ++i) {
-        if (truncated && i == PRINT_EDGE_ITEMS) {
-            printf(",\n");
-            print_indent(base_indent + indent + 1);
-            printf("...");
-            i = dim_len - PRINT_EDGE_ITEMS;
-            continue;
-        }
-
-        if (i > 0) {
-            if (multiline) {
-                printf(",\n");
-                if ((ndim - dim) > 2)
-                    printf("\n");
-
-                print_indent(base_indent + indent + 1);
-            } else {
-                printf(", ");
-            }
-        }
-
-        idx[dim] = i;
-        print_rec(array, dim + 1, idx, indent + 1, BASE_INDENT, col_width);
-    }
-
-    putchar(']');
 }
 
 void print_array(const ndArray *array) {
