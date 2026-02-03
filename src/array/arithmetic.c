@@ -305,14 +305,47 @@ ndArray *array_sum(ndArray *array) {
     return result;
 }
 
+#define _ARRAY_SUM_DIM_KERNEL(T, NAME)                                         \
+    static void NAME(const T *A, T *B, int ndimA, int ndimB, int dim,          \
+                     bool keepdims, const size_t *shapeA,                      \
+                     const size_t *stridesA, size_t total_sizeB) {             \
+        _Pragma("omp parallel for schedule(static)") for (size_t i = 0;        \
+                                                          i < total_sizeB;     \
+                                                          i++) {               \
+            size_t tmp = i;                                                    \
+            size_t offsetA = 0;                                                \
+                                                                               \
+            for (int dA = ndimA - 1; dA >= 0; dA--) {                          \
+                if (dA == dim)                                                 \
+                    continue;                                                  \
+                                                                               \
+                size_t idx = tmp % shapeA[dA];                                 \
+                tmp /= shapeA[dA];                                             \
+                                                                               \
+                offsetA += idx * stridesA[dA];                                 \
+            }                                                                  \
+                                                                               \
+            T sum = (T)0;                                                      \
+            size_t stride_dim = stridesA[dim];                                 \
+            for (size_t k = 0; k < shapeA[dim]; k++)                           \
+                sum += A[offsetA + k * stride_dim];                            \
+                                                                               \
+            B[i] = sum;                                                        \
+        }                                                                      \
+    }
+
+_ARRAY_SUM_DIM_KERNEL(int, _array_sum_dim_i)
+_ARRAY_SUM_DIM_KERNEL(float, _array_sum_dim_f)
+_ARRAY_SUM_DIM_KERNEL(double, _array_sum_dim_d)
+_ARRAY_SUM_DIM_KERNEL(long, _array_sum_dim_l)
+
 ndArray *array_sum_dim(ndArray *array, int dim, bool keepdims) {
     int ndim = get_ndim(array);
     const size_t *shape = get_shape(array);
     DType dtype = get_dtype(array);
 
     int new_ndim = keepdims ? ndim : ndim - 1;
-
-    size_t new_shape[new_ndim], in_idx[ndim], out_idx[new_ndim];
+    size_t new_shape[new_ndim];
 
     int j = 0;
     for (int i = 0; i < ndim; i++) {
@@ -323,25 +356,45 @@ ndArray *array_sum_dim(ndArray *array, int dim, bool keepdims) {
         }
         new_shape[j++] = shape[i];
     }
+
     ndArray *result = zeros(new_ndim, new_shape, dtype);
-    size_t total = get_total_size(array);
 
-    for (size_t i = 0; i < total; i++) {
-        offset_to_index(i, in_idx, shape, ndim);
+    size_t totalB = get_total_size(result), itemsize = get_itemsize(array);
+    const size_t *strides = get_strides(array);
 
-        int oi = 0;
-        for (int ii = 0; ii < ndim; ii++) {
-            if (ii == dim) {
-                if (keepdims)
-                    out_idx[oi++] = 0;
-                continue;
-            }
-            out_idx[oi++] = in_idx[ii];
-        }
+    size_t stridesA[ndim];
+    for (int i = 0; i < ndim; i++)
+        stridesA[i] = strides[i] / itemsize;
 
-        ArrayVal v = get_value(array, in_idx);
-        ArrayVal acc = get_value(result, out_idx);
-        set_value(result, out_idx, array_val_add(v, acc, dtype));
+    switch (dtype) {
+    case DTYPE_INT: {
+        const int *A = get_array_data(array);
+        int *B = get_array_data(result);
+        _array_sum_dim_i(A, B, ndim, new_ndim, dim, keepdims, shape, stridesA,
+                         totalB);
+        break;
+    }
+    case DTYPE_FLOAT: {
+        const float *A = get_array_data(array);
+        float *B = get_array_data(result);
+        _array_sum_dim_f(A, B, ndim, new_ndim, dim, keepdims, shape, stridesA,
+                         totalB);
+        break;
+    }
+    case DTYPE_DOUBLE: {
+        const double *A = get_array_data(array);
+        double *B = get_array_data(result);
+        _array_sum_dim_d(A, B, ndim, new_ndim, dim, keepdims, shape, stridesA,
+                         totalB);
+        break;
+    }
+    case DTYPE_LONG: {
+        const long int *A = get_array_data(array);
+        long int *B = get_array_data(result);
+        _array_sum_dim_l(A, B, ndim, new_ndim, dim, keepdims, shape, stridesA,
+                         totalB);
+        break;
+    }
     }
 
     return result;
