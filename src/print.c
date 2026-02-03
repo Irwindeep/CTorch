@@ -1,9 +1,9 @@
 #include "print.h"
 #include "array.h"
 #include "autograd.h"
-#include "error_codes.h"
 #include "tensor.h"
 
+#include <math.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdio.h>
@@ -15,69 +15,115 @@ static void print_indent(int n) {
         putchar(' ');
 }
 
-static int _print_trunc(const ndArray *array, bool truncated, size_t idx,
-                        int dim, int indent) {
-    if (truncated && idx == PRINT_EDGE_ITEMS) {
-        if (idx > 0)
-            printf(",");
-        printf("\n");
-        print_indent(indent + 2);
-        printf("...");
-        idx = get_shape(array)[dim] - PRINT_EDGE_ITEMS;
+static int format_value(char *buf, size_t n, const ndArray *array,
+                        const size_t *idx) {
+    ArrayVal v = get_value(array, idx);
+
+    switch (get_dtype(array)) {
+    case DTYPE_INT:
+        return snprintf(buf, n, "%d", v.int_val);
+    case DTYPE_LONG:
+        return snprintf(buf, n, "%ld", v.long_val);
+    case DTYPE_FLOAT: {
+        double x = (double)v.float_val;
+        double ax = fabs(x);
+        if ((ax != 0.0 && ax < 1e-4) || ax >= 1e6)
+            return snprintf(buf, n, "%.4e", x);
+        return snprintf(buf, n, "%.4f", x);
     }
-
-    if (idx > 0)
-        printf(",");
-
-    if (dim < get_ndim(array) - 1) {
-        printf("\n");
-        print_indent(indent + 2);
-    } else
-        putchar(' ');
-
-    return idx;
+    case DTYPE_DOUBLE: {
+        double x = v.double_val;
+        double ax = fabs(x);
+        if ((ax != 0.0 && ax < 1e-4) || ax >= 1e6)
+            return snprintf(buf, n, "%.4e", x);
+        return snprintf(buf, n, "%.4f", x);
+    }
+    }
+    return 0;
 }
 
-static void print_rec(const ndArray *array, int dim, size_t *idx, int indent) {
-    if (array == NULL) {
-        printf("NULL");
+static void compute_max_width_rec(const ndArray *array, int dim, size_t *idx,
+                                  int *max_width) {
+    int ndim = get_ndim(array);
+
+    if (dim == ndim) {
+        char buf[64];
+        int w = format_value(buf, sizeof(buf), array, idx);
+        if (w > *max_width)
+            *max_width = w;
         return;
     }
 
-    int ndim = get_ndim(array);
-    if (ndim == 0 || dim == ndim) {
-        ArrayVal value = get_value(array, idx);
-        switch (get_dtype(array)) {
-        case DTYPE_INT:
-            printf("%d", value.int_val);
-            break;
-        case DTYPE_FLOAT:
-            printf("%g", (double)value.float_val);
-            break;
-        case DTYPE_DOUBLE:
-            printf("%g", value.double_val);
-            break;
-        case DTYPE_LONG:
-            printf("%ld", value.long_val);
-            break;
+    size_t len = get_shape(array)[dim];
+    bool truncated = (dim < 2) && (len > 2 * PRINT_EDGE_ITEMS + 1);
+
+    size_t limit = truncated ? PRINT_EDGE_ITEMS : len;
+    for (size_t i = 0; i < limit; ++i) {
+        idx[dim] = i;
+        compute_max_width_rec(array, dim + 1, idx, max_width);
+    }
+
+    if (truncated) {
+        for (size_t i = len - PRINT_EDGE_ITEMS; i < len; ++i) {
+            idx[dim] = i;
+            compute_max_width_rec(array, dim + 1, idx, max_width);
         }
+    }
+}
+
+static int compute_max_width(const ndArray *array) {
+    int ndim = get_ndim(array);
+    size_t idx[ndim];
+    int max_width = 0;
+
+    for (int d = 0; d < ndim; ++d)
+        idx[d] = 0;
+
+    compute_max_width_rec(array, 0, idx, &max_width);
+    return max_width;
+}
+
+static void print_rec(const ndArray *array, int dim, size_t *idx, int indent,
+                      int base_indent, int col_width) {
+    int ndim = get_ndim(array);
+    if (dim == ndim) {
+        char buf[64];
+        format_value(buf, sizeof(buf), array, idx);
+        printf("%*s", col_width, buf);
         return;
     }
+
     size_t dim_len = get_shape(array)[dim];
+    bool multiline = (ndim - dim) > 1;
+
     putchar('[');
 
-    bool truncated = dim_len > 2 * PRINT_EDGE_ITEMS + 1;
-    for (size_t i = 0; i < dim_len; ++i) {
-        i = _print_trunc(array, truncated, i, dim, indent);
-        idx[dim] = i;
-        print_rec(array, dim + 1, idx, indent + 2);
-    }
+    bool truncated = (dim < 2) && (dim_len > 2 * PRINT_EDGE_ITEMS + 1);
 
-    if (dim < ndim - 1 && dim_len > 0) {
-        printf("\n");
-        print_indent(indent);
-    } else if (dim == ndim - 1 && dim_len > 0)
-        putchar(' ');
+    for (size_t i = 0; i < dim_len; ++i) {
+        if (truncated && i == PRINT_EDGE_ITEMS) {
+            printf(",\n");
+            print_indent(base_indent + indent + 1);
+            printf("...");
+            i = dim_len - PRINT_EDGE_ITEMS;
+            continue;
+        }
+
+        if (i > 0) {
+            if (multiline) {
+                printf(",\n");
+                if ((ndim - dim) > 2)
+                    printf("\n");
+
+                print_indent(base_indent + indent + 1);
+            } else {
+                printf(", ");
+            }
+        }
+
+        idx[dim] = i;
+        print_rec(array, dim + 1, idx, indent + 1, BASE_INDENT, col_width);
+    }
 
     putchar(']');
 }
@@ -93,9 +139,7 @@ void print_array(const ndArray *array) {
         return;
     }
 
-    size_t *idx = malloc(get_ndim(array) * sizeof(size_t));
-    if (!idx)
-        RUNTIME_ERROR(ARRAY_INIT_FAILURE, "Failed to create index buffer");
+    size_t idx[get_ndim(array)];
 
     for (int d = 0; d < get_ndim(array); d++) {
         idx[d] = 0;
@@ -104,9 +148,8 @@ void print_array(const ndArray *array) {
             return;
         }
     }
-    print_rec(array, 0, idx, 0);
-
-    free(idx);
+    int max_width = compute_max_width(array);
+    print_rec(array, 0, idx, 0, BASE_INDENT, max_width);
 }
 
 void print_shape(const ndArray *array) {
