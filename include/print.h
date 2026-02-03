@@ -4,7 +4,7 @@
 #include "array.h"
 #include "tensor.h"
 
-#define BASE_INDENT 8
+#define BASE_INDENT 7
 #define PRINT_EDGE_ITEMS 3
 
 void print_array(const ndArray *array);
