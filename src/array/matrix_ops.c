@@ -15,7 +15,7 @@
             for (size_t j = 0; j < n; j++) {                                   \
                 T sum = (T)0;                                                  \
                 for (size_t p = 0; p < k; p++) {                               \
-                    sum += A[i * sAr + p * sAc] * B[p * sBr + j * sAc];        \
+                    sum += A[i * sAr + p * sAc] * B[p * sBr + j * sBc];        \
                 }                                                              \
                 C[i * sCr + j * sCc] = sum;                                    \
             }                                                                  \
