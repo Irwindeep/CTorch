@@ -29,14 +29,14 @@ static int format_value(char *buf, size_t n, const ndArray *array,
         double ax = fabs(x);
         if ((ax != 0.0 && ax < 1e-4) || ax >= 1e6)
             return snprintf(buf, n, "%.4e", x);
-        return snprintf(buf, n, "%.4f", x);
+        return snprintf(buf, n, "%g", x);
     }
     case DTYPE_DOUBLE: {
         double x = v.double_val;
         double ax = fabs(x);
         if ((ax != 0.0 && ax < 1e-4) || ax >= 1e6)
             return snprintf(buf, n, "%.4e", x);
-        return snprintf(buf, n, "%.4f", x);
+        return snprintf(buf, n, "%g", x);
     }
     }
     return 0;
