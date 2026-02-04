@@ -30,16 +30,15 @@ ArrayVal array_val_sub(ArrayVal v1, ArrayVal v2, DType dtype);
 ArrayVal array_val_mul(ArrayVal v1, ArrayVal v2, DType dtype);
 ArrayVal array_val_div(ArrayVal v1, ArrayVal v2, DType dtype);
 ArrayVal array_val_neg(ArrayVal value, DType dtype);
-
 bool array_val_equal(ArrayVal v1, ArrayVal v2, DType dtype);
+
+#define MAX_NDIM 32
 
 typedef struct ndArray ndArray;
 
-// array initialization
 ndArray *array_init(int ndim, const size_t *shape, DType dtype);
 void free_array(ndArray *array);
 
-// getters and setters
 int get_ndim(const ndArray *array);
 size_t get_itemsize(const ndArray *array);
 size_t get_total_size(const ndArray *array);
@@ -57,18 +56,14 @@ void offset_to_index(size_t offset, size_t *idx, const size_t *shape, int ndim);
 
 size_t index_to_offset(const size_t *idx, const size_t *strides, int ndim);
 
-/** Creates and returns a copy of the original @p array. */
 ndArray *copy_array(const ndArray *array);
 
-// some important arrays
 ndArray *eye(size_t m, size_t n, DType dtype);
 ndArray *zeros(int ndim, const size_t *shape, DType dtype);
 ndArray *ones(int ndim, const size_t *shape, DType dtype);
 
-// array comparators
 bool array_equal(const ndArray *arr1, const ndArray *arr2);
 
-// array operations
 bool broadcastable(const size_t *shape1, const size_t *shape2, int ndim1,
                    int ndim2);
 
@@ -79,10 +74,6 @@ void broadcasted_strides(size_t *strides, const size_t *src_strides,
                          const size_t *src_shape, int src_ndim,
                          const size_t *dst_shape, int dst_ndim);
 
-/**
- * @brief Get indices corresponding to broadcasted array for array operations
- * with broadcasting.
- */
 void get_broadcasted_indices(const size_t *shape1, const size_t *shape2,
                              const size_t *shape, int ndim1, int ndim2,
                              int ndim, size_t *idx1, size_t *idx2, size_t *idx,
