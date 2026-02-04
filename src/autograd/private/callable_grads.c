@@ -8,15 +8,16 @@
 #include <stddef.h>
 #include <stdlib.h>
 
-Tensor **_accumulate_grad_fn(Tensor **inputs, Tensor **outputs,
-                             Tensor **input_grads, size_t num_inputs,
-                             size_t num_outputs, bool create_graph) {
+void _accumulate_grad_fn(Tensor **output_grads, Tensor **inputs,
+                         Tensor **outputs, Tensor **input_grads,
+                         size_t num_inputs, size_t num_outputs,
+                         bool create_graph) {
     if (num_inputs != 1 || num_outputs != 0)
         RUNTIME_ERROR(INVALID_NUM_INPUTS_OUTPUTS,
                       "Invalid number of inputs/outputs");
 
     if (create_graph)
-        return NULL;
+        return;
 
     Tensor *tensor = inputs[0];
     Tensor *grad = input_grads[0];
@@ -32,19 +33,14 @@ Tensor **_accumulate_grad_fn(Tensor **inputs, Tensor **outputs,
 
     set_tensor_grad(tensor,
                     tensor_init(sum, false, get_tensor_environ(tensor)));
-    return NULL;
 }
 
-Tensor **_add_grad_fn(Tensor **inputs, Tensor **outputs, Tensor **input_grads,
-                      size_t num_inputs, size_t num_outputs,
-                      bool create_graph) {
+void _add_grad_fn(Tensor **output_grads, Tensor **inputs, Tensor **outputs,
+                  Tensor **input_grads, size_t num_inputs, size_t num_outputs,
+                  bool create_graph) {
     if (num_inputs != 1 || num_outputs != 2)
         RUNTIME_ERROR(INVALID_NUM_INPUTS_OUTPUTS,
                       "Invalid number of inputs/outputs");
-
-    Tensor **output_grads = malloc(num_outputs * sizeof(Tensor *));
-    if (!output_grads)
-        RUNTIME_ERROR(GRAD_INIT_FAILURE, "Failure to allocate gradient tensor");
 
     ndArray *grad = get_tensor_data(input_grads[0]);
 
@@ -64,20 +60,14 @@ Tensor **_add_grad_fn(Tensor **inputs, Tensor **outputs, Tensor **input_grads,
         }
         output_grads[i] = t;
     }
-
-    return output_grads;
 }
 
-Tensor **_mul_grad_fn(Tensor **inputs, Tensor **outputs, Tensor **input_grads,
-                      size_t num_inputs, size_t num_outputs,
-                      bool create_graph) {
+void _mul_grad_fn(Tensor **output_grads, Tensor **inputs, Tensor **outputs,
+                  Tensor **input_grads, size_t num_inputs, size_t num_outputs,
+                  bool create_graph) {
     if (num_inputs != 1 || num_outputs != 2)
         RUNTIME_ERROR(INVALID_NUM_INPUTS_OUTPUTS,
                       "Invalid number of inputs/outputs");
-
-    Tensor **output_grads = malloc(num_outputs * sizeof(Tensor *));
-    if (!output_grads)
-        RUNTIME_ERROR(GRAD_INIT_FAILURE, "Failure to allocate gradient tensor");
 
     ndArray *grad = get_tensor_data(input_grads[0]);
     Tensor *grad_tensor = input_grads[0];
@@ -101,20 +91,14 @@ Tensor **_mul_grad_fn(Tensor **inputs, Tensor **outputs, Tensor **input_grads,
         }
         output_grads[i] = t;
     }
-
-    return output_grads;
 }
 
-Tensor **_neg_grad_fn(Tensor **inputs, Tensor **outputs, Tensor **input_grads,
-                      size_t num_inputs, size_t num_outputs,
-                      bool create_graph) {
+void _neg_grad_fn(Tensor **output_grads, Tensor **inputs, Tensor **outputs,
+                  Tensor **input_grads, size_t num_inputs, size_t num_outputs,
+                  bool create_graph) {
     if (num_inputs != 1 || num_outputs != 1)
         RUNTIME_ERROR(INVALID_NUM_INPUTS_OUTPUTS,
                       "Invalid number of inputs/outputs");
-
-    Tensor **output_grads = malloc(num_outputs * sizeof(Tensor *));
-    if (!output_grads)
-        RUNTIME_ERROR(GRAD_INIT_FAILURE, "Failure to allocate gradient tensor");
 
     ndArray *grad = get_tensor_data(input_grads[0]);
 
@@ -129,20 +113,14 @@ Tensor **_neg_grad_fn(Tensor **inputs, Tensor **outputs, Tensor **input_grads,
         t = tensor_init(data, false, get_tensor_environ(outputs[0]));
     }
     output_grads[0] = t;
-
-    return output_grads;
 }
 
-Tensor **_inv_grad_fn(Tensor **inputs, Tensor **outputs, Tensor **input_grads,
-                      size_t num_inputs, size_t num_outputs,
-                      bool create_graph) {
+void _inv_grad_fn(Tensor **output_grads, Tensor **inputs, Tensor **outputs,
+                  Tensor **input_grads, size_t num_inputs, size_t num_outputs,
+                  bool create_graph) {
     if (num_inputs != 1 || num_outputs != 1)
         RUNTIME_ERROR(INVALID_NUM_INPUTS_OUTPUTS,
                       "Invalid number of inputs/outputs");
-
-    Tensor **output_grads = malloc(num_outputs * sizeof(Tensor *));
-    if (!output_grads)
-        RUNTIME_ERROR(GRAD_INIT_FAILURE, "Failure to allocate gradient tensor");
 
     ndArray *grad = get_tensor_data(input_grads[0]);
 
@@ -163,20 +141,15 @@ Tensor **_inv_grad_fn(Tensor **inputs, Tensor **outputs, Tensor **input_grads,
         t = tensor_init(data, false, get_tensor_environ(outputs[0]));
     }
     output_grads[0] = t;
-
-    return output_grads;
 }
 
-Tensor **_transpose_grad_fn(Tensor **inputs, Tensor **outputs,
-                            Tensor **input_grads, size_t num_inputs,
-                            size_t num_outputs, bool create_graph) {
+void _transpose_grad_fn(Tensor **output_grads, Tensor **inputs,
+                        Tensor **outputs, Tensor **input_grads,
+                        size_t num_inputs, size_t num_outputs,
+                        bool create_graph) {
     if (num_inputs != 1 || num_outputs != 1)
         RUNTIME_ERROR(INVALID_NUM_INPUTS_OUTPUTS,
                       "Invalid number of inputs/outputs");
-
-    Tensor **output_grads = malloc(num_outputs * sizeof(Tensor *));
-    if (!output_grads)
-        RUNTIME_ERROR(GRAD_INIT_FAILURE, "Failure to allocate gradient tensor");
 
     BackwardFn *bk_fn = get_backward_fn(inputs[0]);
     Ctx ctx_kind = get_ctx_kind(bk_fn);
@@ -197,20 +170,14 @@ Tensor **_transpose_grad_fn(Tensor **inputs, Tensor **outputs,
         t = tensor_init(data, false, get_tensor_environ(outputs[0]));
     }
     output_grads[0] = t;
-
-    return output_grads;
 }
 
-Tensor **_matmul_grad_fn(Tensor **inputs, Tensor **outputs,
-                         Tensor **input_grads, size_t num_inputs,
-                         size_t num_outputs, bool create_graph) {
+void _matmul_grad_fn(Tensor **output_grads, Tensor **inputs, Tensor **outputs,
+                     Tensor **input_grads, size_t num_inputs,
+                     size_t num_outputs, bool create_graph) {
     if (num_inputs != 1 || num_outputs != 2)
         RUNTIME_ERROR(INVALID_NUM_INPUTS_OUTPUTS,
                       "Invalid number of inputs/outputs");
-
-    Tensor **output_grads = malloc(num_outputs * sizeof(Tensor *));
-    if (!output_grads)
-        RUNTIME_ERROR(GRAD_INIT_FAILURE, "Failure to allocate gradient tensor");
 
     ndArray *grad = get_tensor_data(input_grads[0]);
     Tensor *grad_tensor = input_grads[0];
@@ -253,20 +220,14 @@ Tensor **_matmul_grad_fn(Tensor **inputs, Tensor **outputs,
         }
         output_grads[i] = t;
     }
-
-    return output_grads;
 }
 
-Tensor **_sum_grad_fn(Tensor **inputs, Tensor **outputs, Tensor **input_grads,
-                      size_t num_inputs, size_t num_outputs,
-                      bool create_graph) {
+void _sum_grad_fn(Tensor **output_grads, Tensor **inputs, Tensor **outputs,
+                  Tensor **input_grads, size_t num_inputs, size_t num_outputs,
+                  bool create_graph) {
     if (num_inputs != 1 || num_outputs != 1)
         RUNTIME_ERROR(INVALID_NUM_INPUTS_OUTPUTS,
                       "Invalid number of inputs/outputs");
-
-    Tensor **output_grads = malloc(num_outputs * sizeof(Tensor *));
-    if (!output_grads)
-        RUNTIME_ERROR(GRAD_INIT_FAILURE, "Failure to allocate gradient tensor");
 
     Tensor *t;
     if (create_graph) {
@@ -286,6 +247,4 @@ Tensor **_sum_grad_fn(Tensor **inputs, Tensor **outputs, Tensor **input_grads,
         free_array(ones_array);
     }
     output_grads[0] = t;
-
-    return output_grads;
 }

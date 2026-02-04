@@ -29,20 +29,17 @@ static void _gradient_backward(Tensor **inputs, Tensor **grads,
 
     CallableGradFn grad_fn = get_grad_fn(backward_fn);
 
-    Tensor **op_grads = grad_fn(cur_inputs, outputs, cur_grads, num_fn_inputs,
-                                num_fn_outputs, create_graph);
+    Tensor *op_grads[num_fn_outputs];
+    grad_fn(op_grads, cur_inputs, outputs, cur_grads, num_fn_inputs,
+            num_fn_outputs, create_graph);
 
     for (size_t i = 0; i < num_fn_outputs; i++) {
         const Tensor *out = outputs[i];
         Tensor *g = op_grads[i];
 
-        /* Is this one of the requested inputs? */
         ssize_t idx = find_input(out, inputs, num_inputs);
         if (idx >= 0) {
-            if (grads[idx])
-                grads[idx] = tensor_add(grads[idx], g);
-            else
-                grads[idx] = g;
+            grads[idx] = grads[idx] ? tensor_add(grads[idx], g) : g;
             continue;
         }
 
@@ -60,12 +57,11 @@ static void _gradient_backward(Tensor **inputs, Tensor **grads,
         _gradient_backward(inputs, grads, num_inputs, next_inputs, next_grads,
                            next_fn, create_graph);
     }
-
-    free(op_grads);
 }
 
-Tensor **gradient(size_t num_inputs, Tensor **inputs, size_t num_outputs,
-                  Tensor **outputs, Tensor **grad_outputs, bool create_graph) {
+void gradient(Tensor **grads, size_t num_inputs, Tensor **inputs,
+              size_t num_outputs, Tensor **outputs, Tensor **grad_outputs,
+              bool create_graph) {
     for (size_t i = 0; i < num_inputs; i++) {
         bool requires_grad = get_requires_grad(inputs[i]);
         if (!requires_grad)
@@ -81,10 +77,6 @@ Tensor **gradient(size_t num_inputs, Tensor **inputs, size_t num_outputs,
                 "Output tensor at index `%zu` does not requires_grad", i);
     }
 
-    Tensor **grads = calloc(num_inputs, sizeof(Tensor *));
-    if (!grads)
-        RUNTIME_ERROR(GRAD_INIT_FAILURE, "Failed to allocate gradients");
-
     for (size_t i = 0; i < num_outputs; i++) {
         BackwardFn *fn = get_backward_fn(outputs[i]);
         if (!fn)
@@ -93,8 +85,6 @@ Tensor **gradient(size_t num_inputs, Tensor **inputs, size_t num_outputs,
         _gradient_backward(inputs, grads, num_inputs, (Tensor *[]){outputs[i]},
                            (Tensor *[]){grad_outputs[i]}, fn, create_graph);
     }
-
-    return grads;
 }
 
 static inline void _backward(Tensor **inputs, Tensor **grads,
@@ -106,8 +96,8 @@ static inline void _backward(Tensor **inputs, Tensor **grads,
     BackwardFn **next_fns = get_next_functions(backward_fn);
 
     CallableGradFn grad_fn = get_grad_fn(backward_fn);
-    Tensor **op_grads =
-        grad_fn(inputs, outputs, grads, num_inputs, num_outputs, false);
+    Tensor *op_grads[num_outputs];
+    grad_fn(op_grads, inputs, outputs, grads, num_inputs, num_outputs, false);
 
     size_t i = 0;
     while (i < num_outputs) {
@@ -126,8 +116,6 @@ static inline void _backward(Tensor **inputs, Tensor **grads,
 
         _backward(next_fn_inputs, next_fn_ip_grads, next_fn);
     }
-
-    free(op_grads);
 }
 
 void backward(Tensor *tensor, Tensor *grad) {

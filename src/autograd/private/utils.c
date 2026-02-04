@@ -29,17 +29,13 @@ ndArray *broadcast_grad_data(ndArray *data, int ndim, const size_t *shape) {
     return data;
 }
 
-static inline Tensor **_broadcast_grad_fn(Tensor **inputs, Tensor **outputs,
-                                          Tensor **input_grads,
-                                          size_t num_inputs, size_t num_outputs,
-                                          bool create_graph) {
+static inline void _broadcast_grad_fn(Tensor **output_grads, Tensor **inputs,
+                                      Tensor **outputs, Tensor **input_grads,
+                                      size_t num_inputs, size_t num_outputs,
+                                      bool create_graph) {
     if (num_inputs != 1 || num_outputs != 1)
         RUNTIME_ERROR(INVALID_NUM_INPUTS_OUTPUTS,
                       "Invalid number of inputs/outputs");
-
-    Tensor **output_grads = malloc(num_outputs * sizeof(Tensor *));
-    if (!output_grads)
-        RUNTIME_ERROR(GRAD_INIT_FAILURE, "Failure to allocate gradient tensor");
 
     Tensor *grad_tensor = input_grads[0];
 
@@ -58,7 +54,6 @@ static inline Tensor **_broadcast_grad_fn(Tensor **inputs, Tensor **outputs,
     }
 
     output_grads[0] = t;
-    return output_grads;
 }
 
 static inline BackwardFn *BroadcastBackward(Tensor **inputs, Tensor **outputs,

@@ -20,9 +20,9 @@
   - [ ] Imshow
   - [ ] Dot graphs for forward and backward mode computation graphs
   - [ ] Dot graphs for neural nets
-- [ ] Refactor autograd
-  - [ ] Callable gradient to a `void` function.
+- [x] Refactor autograd
+  - [x] Callable gradient to a `void` function.
         So that, mallocs wouldn't be necessary for every grad_fn call.
-  - [ ] `gradient` function to take `grads` as a parameter
+  - [x] `gradient` function to take `grads` as a parameter
         instead of returning it.
 - [ ] Prepare documentation

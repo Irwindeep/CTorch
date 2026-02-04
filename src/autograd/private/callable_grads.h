@@ -10,8 +10,9 @@ ndArray *broadcast_grad_data(ndArray *data, int ndim, const size_t *shape);
 Tensor *broadcast_tensor_grad(Tensor *data, int ndim, const size_t *shape);
 
 #define _DECLARE_GRAD_FN(NAME)                                                 \
-    Tensor **NAME(Tensor **inputs, Tensor **outputs, Tensor **input_grads,     \
-                  size_t num_inputs, size_t num_outputs, bool create_graph);
+    void NAME(Tensor **output_grads, Tensor **inputs, Tensor **outputs,        \
+              Tensor **input_grads, size_t num_inputs, size_t num_outputs,     \
+              bool create_graph);
 
 _DECLARE_GRAD_FN(_accumulate_grad_fn)
 _DECLARE_GRAD_FN(_add_grad_fn)
