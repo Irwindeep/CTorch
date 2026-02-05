@@ -16,8 +16,8 @@ static inline float prng_uniform_f(PRNG *rng) {
     return (rng_rand(rng) >> 40) * (1.0f / 16777216.0f);
 }
 
-Tensor *uniform(PRNG *rng, int ndim, const size_t *shape, DType dtype,
-                bool requires_grad, Environment *environ) {
+Tensor *uniform(int ndim, const size_t *shape, DType dtype, bool requires_grad,
+                Environment *environ) {
     if (dtype != DTYPE_DOUBLE && dtype != DTYPE_FLOAT)
         RUNTIME_ERROR(INVALID_DTYPE, "Invalid dtype for uniform tensor");
 
@@ -34,7 +34,7 @@ Tensor *uniform(PRNG *rng, int ndim, const size_t *shape, DType dtype,
             break;
         }
         for (size_t i = 0; i < total_size; i++)
-            arr_data[i] = prng_uniform_d(rng);
+            arr_data[i] = prng_uniform_d(global_rng);
 
         populate_array(data, arr_data);
         free(arr_data);
@@ -47,7 +47,7 @@ Tensor *uniform(PRNG *rng, int ndim, const size_t *shape, DType dtype,
             break;
         }
         for (size_t i = 0; i < total_size; i++)
-            arr_data[i] = prng_uniform_f(rng);
+            arr_data[i] = prng_uniform_f(global_rng);
 
         populate_array(data, arr_data);
         free(arr_data);
@@ -103,8 +103,8 @@ static inline float prng_randn_f(PRNG *rng) {
     return u * s;
 }
 
-Tensor *randn(PRNG *rng, int ndim, const size_t *shape, DType dtype,
-              bool requires_grad, Environment *environ) {
+Tensor *randn(int ndim, const size_t *shape, DType dtype, bool requires_grad,
+              Environment *environ) {
     if (dtype != DTYPE_DOUBLE && dtype != DTYPE_FLOAT)
         RUNTIME_ERROR(INVALID_DTYPE, "Invalid dtype for randn tensor");
 
@@ -121,7 +121,7 @@ Tensor *randn(PRNG *rng, int ndim, const size_t *shape, DType dtype,
             break;
         }
         for (size_t i = 0; i < total_size; i++)
-            arr_data[i] = prng_randn_d(rng);
+            arr_data[i] = prng_randn_d(global_rng);
 
         populate_array(data, arr_data);
         free(arr_data);
@@ -134,7 +134,7 @@ Tensor *randn(PRNG *rng, int ndim, const size_t *shape, DType dtype,
             break;
         }
         for (size_t i = 0; i < total_size; i++)
-            arr_data[i] = prng_randn_f(rng);
+            arr_data[i] = prng_randn_f(global_rng);
 
         populate_array(data, arr_data);
         free(arr_data);
@@ -190,8 +190,8 @@ static inline long pcg64_randint_l(PRNG *rng, long low, long high) {
     return low + (long)r;
 }
 
-Tensor *randint(PRNG *rng, int ndim, const size_t *shape, long int low,
-                long int high, DType dtype, Environment *environ) {
+Tensor *randint(int ndim, const size_t *shape, long int low, long int high,
+                DType dtype, Environment *environ) {
     if (dtype != DTYPE_INT && dtype != DTYPE_LONG)
         RUNTIME_ERROR(INVALID_DTYPE, "Invalid dtype for randint tensor");
 
@@ -208,7 +208,7 @@ Tensor *randint(PRNG *rng, int ndim, const size_t *shape, long int low,
             break;
         }
         for (size_t i = 0; i < total_size; i++)
-            arr_data[i] = pcg64_randint_i(rng, low, high);
+            arr_data[i] = pcg64_randint_i(global_rng, low, high);
 
         populate_array(data, arr_data);
         free(arr_data);
@@ -221,7 +221,7 @@ Tensor *randint(PRNG *rng, int ndim, const size_t *shape, long int low,
             break;
         }
         for (size_t i = 0; i < total_size; i++)
-            arr_data[i] = pcg64_randint_l(rng, low, high);
+            arr_data[i] = pcg64_randint_l(global_rng, low, high);
 
         populate_array(data, arr_data);
         free(arr_data);
