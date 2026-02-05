@@ -38,7 +38,7 @@ size_t num_parameters(Module *module) {
     return count;
 }
 
-void parameters(Module *module, Tensor **out, size_t *count) {
+static void _parameters(Module *module, Tensor **out, size_t *count) {
     Environment *env = module->environ;
     if (env) {
         size_t num_tensors = get_num_tensors(env);
@@ -49,8 +49,13 @@ void parameters(Module *module, Tensor **out, size_t *count) {
     }
 
     for (size_t i = 0; i < module->num_modules; i++) {
-        parameters(module->modules[i], out, count);
+        _parameters(module->modules[i], out, count);
     }
+}
+
+void parameters(Module *module, Tensor **out) {
+    size_t idx = 0;
+    _parameters(module, out, &idx);
 }
 
 Environment *get_environ(const Module *module) { return module->environ; }

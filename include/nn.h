@@ -23,7 +23,7 @@ void add_module(Module *base, Module *child);
 void add_tensor(Module *base, Tensor *tensor);
 
 size_t num_parameters(Module *module);
-void parameters(Module *module, Tensor **out, size_t *count);
+void parameters(Module *module, Tensor **out);
 
 Tensor *module_call(Module *module, Tensor *tensor);
 
