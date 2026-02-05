@@ -22,29 +22,46 @@
                 offsetB += idx * sB[d];                                        \
                 offsetC += idx * sC[d];                                        \
             }                                                                  \
-            C[offsetC] = A[offsetA] OP B[offsetB];                             \
+            C[offsetC] = OP(A[offsetA], B[offsetB]);                           \
         }                                                                      \
     }
 
-_ARRAY_OP(int, _array_add_i, +)
-_ARRAY_OP(float, _array_add_f, +)
-_ARRAY_OP(double, _array_add_d, +)
-_ARRAY_OP(long int, _array_add_l, +)
+#define OP_ADD(a, b) ((a) + (b))
+#define OP_SUB(a, b) ((a) - (b))
+#define OP_MUL(a, b) ((a) * (b))
+#define OP_DIV(a, b) ((a) / (b))
+#define OP_MAX(a, b) ((a) > (b) ? (a) : (b))
+#define OP_MIN(a, b) ((a) < (b) ? (a) : (b))
 
-_ARRAY_OP(int, _array_sub_i, -)
-_ARRAY_OP(float, _array_sub_f, -)
-_ARRAY_OP(double, _array_sub_d, -)
-_ARRAY_OP(long int, _array_sub_l, -)
+_ARRAY_OP(int, _array_add_i, OP_ADD)
+_ARRAY_OP(float, _array_add_f, OP_ADD)
+_ARRAY_OP(double, _array_add_d, OP_ADD)
+_ARRAY_OP(long int, _array_add_l, OP_ADD)
 
-_ARRAY_OP(int, _array_mul_i, *)
-_ARRAY_OP(float, _array_mul_f, *)
-_ARRAY_OP(double, _array_mul_d, *)
-_ARRAY_OP(long int, _array_mul_l, *)
+_ARRAY_OP(int, _array_sub_i, OP_SUB)
+_ARRAY_OP(float, _array_sub_f, OP_SUB)
+_ARRAY_OP(double, _array_sub_d, OP_SUB)
+_ARRAY_OP(long int, _array_sub_l, OP_SUB)
 
-_ARRAY_OP(int, _array_div_i, /)
-_ARRAY_OP(float, _array_div_f, /)
-_ARRAY_OP(double, _array_div_d, /)
-_ARRAY_OP(long int, _array_div_l, /)
+_ARRAY_OP(int, _array_mul_i, OP_MUL)
+_ARRAY_OP(float, _array_mul_f, OP_MUL)
+_ARRAY_OP(double, _array_mul_d, OP_MUL)
+_ARRAY_OP(long int, _array_mul_l, OP_MUL)
+
+_ARRAY_OP(int, _array_div_i, OP_DIV)
+_ARRAY_OP(float, _array_div_f, OP_DIV)
+_ARRAY_OP(double, _array_div_d, OP_DIV)
+_ARRAY_OP(long int, _array_div_l, OP_DIV)
+
+_ARRAY_OP(int, _array_max_i, OP_MAX)
+_ARRAY_OP(float, _array_max_f, OP_MAX)
+_ARRAY_OP(double, _array_max_d, OP_MAX)
+_ARRAY_OP(long int, _array_max_l, OP_MAX)
+
+_ARRAY_OP(int, _array_min_i, OP_MIN)
+_ARRAY_OP(float, _array_min_f, OP_MIN)
+_ARRAY_OP(double, _array_min_d, OP_MIN)
+_ARRAY_OP(long int, _array_min_l, OP_MIN)
 
 #define CAT(a, b) a##b
 
@@ -84,13 +101,17 @@ _ARRAY_OP(long int, _array_div_l, /)
         }                                                                      \
     } while (0);
 
-ndArray *array_add(ndArray *arr1, ndArray *arr2) {
+static ndArray *array_binary_op(ndArray *arr1, ndArray *arr2,
+                                void (*dispatch)(DType, ndArray *, ndArray *,
+                                                 ndArray *, size_t *, size_t *,
+                                                 size_t *, int, size_t,
+                                                 size_t *)) {
     int ndim1 = get_ndim(arr1), ndim2 = get_ndim(arr2);
     int ndim = (ndim1 > ndim2) ? ndim1 : ndim2;
+
     DType dtype1 = get_dtype(arr1), dtype2 = get_dtype(arr2), dtype;
     if (dtype1 != dtype2)
-        RUNTIME_ERRORF(INVALID_DTYPE,
-                       "Cannot add arrays with dtypes `%s` and `%s`",
+        RUNTIME_ERRORF(INVALID_DTYPE, "Dtype mismatch `%s` and `%s`",
                        DTypeNames[dtype1], DTypeNames[dtype2]);
     dtype = dtype1;
 
@@ -101,6 +122,7 @@ ndArray *array_add(ndArray *arr1, ndArray *arr2) {
 
     size_t *strides1 = get_strides(arr1), *strides2 = get_strides(arr2);
     const size_t *strides = get_strides(result);
+
     size_t b_strides1[ndim], b_strides2[ndim], sC[ndim];
 
     broadcasted_strides(b_strides1, strides1, shape1, ndim1, shape, ndim);
@@ -108,124 +130,55 @@ ndArray *array_add(ndArray *arr1, ndArray *arr2) {
 
     size_t total_size = get_total_size(result);
     size_t itemsize = get_itemsize(result);
+
     for (int i = 0; i < ndim; i++) {
         b_strides1[i] /= itemsize;
         b_strides2[i] /= itemsize;
         sC[i] = strides[i] / itemsize;
     }
 
-    DISPATCH(dtype, _array_add, arr1, arr2, result, b_strides1, b_strides2, sC,
-             ndim, total_size, shape)
+    dispatch(dtype, arr1, arr2, result, b_strides1, b_strides2, sC, ndim,
+             total_size, shape);
 
     return result;
+}
+
+#define DEFINE_DISPATCH_FUNC(name, kernel)                                     \
+    static inline void dispatch_##name(                                        \
+        DType dtype, ndArray *a, ndArray *b, ndArray *c, size_t *s1,           \
+        size_t *s2, size_t *sc, int n, size_t ts, size_t *sh) {                \
+        DISPATCH(dtype, kernel, a, b, c, s1, s2, sc, n, ts, sh);               \
+    }
+
+DEFINE_DISPATCH_FUNC(add, _array_add)
+DEFINE_DISPATCH_FUNC(sub, _array_sub)
+DEFINE_DISPATCH_FUNC(mul, _array_mul)
+DEFINE_DISPATCH_FUNC(div, _array_div)
+DEFINE_DISPATCH_FUNC(max, _array_max)
+DEFINE_DISPATCH_FUNC(min, _array_min)
+
+ndArray *array_add(ndArray *arr1, ndArray *arr2) {
+    return array_binary_op(arr1, arr2, dispatch_add);
 }
 
 ndArray *array_sub(ndArray *arr1, ndArray *arr2) {
-    int ndim1 = get_ndim(arr1), ndim2 = get_ndim(arr2);
-    int ndim = (ndim1 > ndim2) ? ndim1 : ndim2;
-    DType dtype1 = get_dtype(arr1), dtype2 = get_dtype(arr2), dtype;
-    if (dtype1 != dtype2)
-        RUNTIME_ERRORF(INVALID_DTYPE,
-                       "Cannot subtract arrays with dtypes `%s` and `%s`",
-                       DTypeNames[dtype1], DTypeNames[dtype2]);
-    dtype = dtype1;
-
-    size_t *shape1 = get_shape(arr1), *shape2 = get_shape(arr2);
-    size_t shape[ndim];
-    broadcast_shape(shape1, shape2, shape, ndim1, ndim2, ndim);
-    ndArray *result = array_init(ndim, shape, dtype);
-
-    size_t *strides1 = get_strides(arr1), *strides2 = get_strides(arr2);
-    const size_t *strides = get_strides(result);
-    size_t b_strides1[ndim], b_strides2[ndim], sC[ndim];
-
-    broadcasted_strides(b_strides1, strides1, shape1, ndim1, shape, ndim);
-    broadcasted_strides(b_strides2, strides2, shape2, ndim2, shape, ndim);
-
-    size_t total_size = get_total_size(result);
-    size_t itemsize = get_itemsize(result);
-    for (int i = 0; i < ndim; i++) {
-        b_strides1[i] /= itemsize;
-        b_strides2[i] /= itemsize;
-        sC[i] = strides[i] / itemsize;
-    }
-
-    DISPATCH(dtype, _array_sub, arr1, arr2, result, b_strides1, b_strides2, sC,
-             ndim, total_size, shape)
-
-    return result;
+    return array_binary_op(arr1, arr2, dispatch_sub);
 }
 
 ndArray *array_mul(ndArray *arr1, ndArray *arr2) {
-    int ndim1 = get_ndim(arr1), ndim2 = get_ndim(arr2);
-    int ndim = (ndim1 > ndim2) ? ndim1 : ndim2;
-    DType dtype1 = get_dtype(arr1), dtype2 = get_dtype(arr2), dtype;
-    if (dtype1 != dtype2)
-        RUNTIME_ERRORF(INVALID_DTYPE,
-                       "Cannot multiply arrays with dtypes `%s` and `%s`",
-                       DTypeNames[dtype1], DTypeNames[dtype2]);
-    dtype = dtype1;
-
-    size_t *shape1 = get_shape(arr1), *shape2 = get_shape(arr2);
-    size_t shape[ndim];
-    broadcast_shape(shape1, shape2, shape, ndim1, ndim2, ndim);
-    ndArray *result = array_init(ndim, shape, dtype);
-
-    size_t *strides1 = get_strides(arr1), *strides2 = get_strides(arr2);
-    const size_t *strides = get_strides(result);
-    size_t b_strides1[ndim], b_strides2[ndim], sC[ndim];
-
-    broadcasted_strides(b_strides1, strides1, shape1, ndim1, shape, ndim);
-    broadcasted_strides(b_strides2, strides2, shape2, ndim2, shape, ndim);
-
-    size_t total_size = get_total_size(result);
-    size_t itemsize = get_itemsize(result);
-    for (int i = 0; i < ndim; i++) {
-        b_strides1[i] /= itemsize;
-        b_strides2[i] /= itemsize;
-        sC[i] = strides[i] / itemsize;
-    }
-
-    DISPATCH(dtype, _array_mul, arr1, arr2, result, b_strides1, b_strides2, sC,
-             ndim, total_size, shape)
-
-    return result;
+    return array_binary_op(arr1, arr2, dispatch_mul);
 }
 
 ndArray *array_div(ndArray *arr1, ndArray *arr2) {
-    int ndim1 = get_ndim(arr1), ndim2 = get_ndim(arr2);
-    int ndim = (ndim1 > ndim2) ? ndim1 : ndim2;
-    DType dtype1 = get_dtype(arr1), dtype2 = get_dtype(arr2), dtype;
-    if (dtype1 != dtype2)
-        RUNTIME_ERRORF(INVALID_DTYPE,
-                       "Cannot divide arrays with dtypes `%s` and `%s`",
-                       DTypeNames[dtype1], DTypeNames[dtype2]);
-    dtype = dtype1;
+    return array_binary_op(arr1, arr2, dispatch_div);
+}
 
-    size_t *shape1 = get_shape(arr1), *shape2 = get_shape(arr2);
-    size_t shape[ndim];
-    broadcast_shape(shape1, shape2, shape, ndim1, ndim2, ndim);
-    ndArray *result = array_init(ndim, shape, dtype);
+ndArray *array_max(ndArray *arr1, ndArray *arr2) {
+    return array_binary_op(arr1, arr2, dispatch_max);
+}
 
-    size_t *strides1 = get_strides(arr1), *strides2 = get_strides(arr2);
-    const size_t *strides = get_strides(result);
-    size_t b_strides1[ndim], b_strides2[ndim], sC[ndim];
-
-    broadcasted_strides(b_strides1, strides1, shape1, ndim1, shape, ndim);
-    broadcasted_strides(b_strides2, strides2, shape2, ndim2, shape, ndim);
-
-    size_t total_size = get_total_size(result);
-    size_t itemsize = get_itemsize(result);
-    for (int i = 0; i < ndim; i++) {
-        b_strides1[i] /= itemsize;
-        b_strides2[i] /= itemsize;
-        sC[i] = strides[i] / itemsize;
-    }
-
-    DISPATCH(dtype, _array_div, arr1, arr2, result, b_strides1, b_strides2, sC,
-             ndim, total_size, shape)
-
-    return result;
+ndArray *array_min(ndArray *arr1, ndArray *arr2) {
+    return array_binary_op(arr1, arr2, dispatch_min);
 }
 
 ndArray *negative(ndArray *array) {
