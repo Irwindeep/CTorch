@@ -21,6 +21,16 @@ void free_env(Environment *environ);
 void env_push(Environment *environ, Tensor *tensor);
 Tensor *env_pop(Environment *environ);
 
+Tensor **get_tensors(const Environment *environ);
+size_t get_num_tensors(const Environment *environ);
+
+bool get_lock(const Environment *environ);
+
+void set_lock(Environment *environ);
+void open_lock(Environment *environ);
+
+Environment *resolve_environ(Tensor *t1, Tensor *t2);
+
 Tensor *tensor_init(ndArray *data, bool requires_grad, Environment *environ);
 void free_tensor(Tensor *tensor);
 

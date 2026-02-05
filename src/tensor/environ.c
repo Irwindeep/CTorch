@@ -1,5 +1,7 @@
 #include "error_codes.h"
 #include "tensor.h"
+
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -12,6 +14,8 @@ struct Environment {
     Tensor **tensors;
     size_t capacity;
     size_t num_tensors;
+
+    bool lock;
 };
 
 Environment *env_init() {
@@ -22,6 +26,7 @@ Environment *env_init() {
     environ->capacity = 1;
     environ->tensors = malloc(environ->capacity * sizeof(Tensor *));
     environ->num_tensors = 0;
+    environ->lock = false;
 
     return environ;
 }
@@ -59,4 +64,28 @@ Tensor *env_pop(Environment *environ) {
 
     Tensor *tensor = environ->tensors[--environ->num_tensors];
     return tensor;
+}
+
+Tensor **get_tensors(const Environment *environ) { return environ->tensors; }
+size_t get_num_tensors(const Environment *environ) {
+    return environ->num_tensors;
+}
+
+bool get_lock(const Environment *environ) { return environ->lock; }
+
+void set_lock(Environment *environ) { environ->lock = true; }
+void open_lock(Environment *environ) { environ->lock = false; }
+
+Environment *resolve_environ(Tensor *t1, Tensor *t2) {
+    Environment *env1 = get_tensor_environ(t1), *env2 = get_tensor_environ(t2);
+
+    if (env1->lock) {
+        if (env2->lock)
+            RUNTIME_ERROR(
+                ENV_RESOLVE_FAILURE,
+                "Both Environments Locked - Cannot Resolve Environment");
+
+        return env2;
+    }
+    return env1;
 }

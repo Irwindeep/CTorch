@@ -28,6 +28,7 @@ static const ErrorInfo error_table[] = {
     {FILE_WRITE_FAILURE, "FILE_WRITE_FAILURE"},
     {FILE_READ_FAILURE, "FILE_READ_FAILURE"},
     {FILE_FORMAT_ERROR, "FILE_FORMAT_ERROR"},
+    {ENV_RESOLVE_FAILURE, "ENV_RESOLVE_FAILURE"},
 
     /* autograd related error codes 30<x> */
     {BACKWARD_FN_INIT_FAILURE, "BACKWARD_FN_INIT_FAILURE"},

@@ -13,7 +13,8 @@ Tensor *tensor_add(Tensor *t1, Tensor *t2) {
          t2_requires_grad = get_requires_grad(t2);
     bool requires_grad = t1_requires_grad || t2_requires_grad;
 
-    Tensor *tensor = tensor_init(data, requires_grad, get_tensor_environ(t1));
+    Environment *env = resolve_environ(t1, t2);
+    Tensor *tensor = tensor_init(data, requires_grad, env);
     if (requires_grad) {
         BackwardFn *backward_fn =
             AddBackward((Tensor *[]){tensor}, (Tensor *[]){t1, t2}, 1, 2);
@@ -38,7 +39,8 @@ Tensor *tensor_mul(Tensor *t1, Tensor *t2) {
          t2_requires_grad = get_requires_grad(t2);
     bool requires_grad = t1_requires_grad || t2_requires_grad;
 
-    Tensor *tensor = tensor_init(data, requires_grad, get_tensor_environ(t1));
+    Environment *env = resolve_environ(t1, t2);
+    Tensor *tensor = tensor_init(data, requires_grad, env);
     if (requires_grad) {
         BackwardFn *backward_fn =
             MulBackward((Tensor *[]){tensor}, (Tensor *[]){t1, t2}, 1, 2);

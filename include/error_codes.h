@@ -23,6 +23,7 @@ typedef enum {
     FILE_WRITE_FAILURE = 206,
     FILE_READ_FAILURE = 207,
     FILE_FORMAT_ERROR = 208,
+    ENV_RESOLVE_FAILURE = 209,
 
     /* autograd related error codes 30<x> */
     BACKWARD_FN_INIT_FAILURE = 301,
