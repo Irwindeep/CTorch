@@ -61,4 +61,7 @@ _DECLARE_BACKWARD_FN(MatMulBackward)
 _DECLARE_BACKWARD_FN(TransposeBackward)
 _DECLARE_BACKWARD_FN(SumBackward)
 
+_DECLARE_BACKWARD_FN(MaxBackward)
+_DECLARE_BACKWARD_FN(MinBackward)
+
 #endif // !AUTOGRAD_H
