@@ -181,6 +181,77 @@ ndArray *array_min(ndArray *arr1, ndArray *arr2) {
     return array_binary_op(arr1, arr2, dispatch_min);
 }
 
+#define _ARRAY_CMP(T, NAME, OP)                                                \
+    static void NAME(const T *A, const T *B, T *C, const size_t *sA,           \
+                     const size_t *sB, const size_t *sC, int ndim,             \
+                     size_t total_size, const size_t *shapeC) {                \
+        _Pragma("omp parallel for schedule(static)") for (size_t i = 0;        \
+                                                          i < total_size;      \
+                                                          i++) {               \
+            size_t tmp = i;                                                    \
+            size_t offsetA = 0, offsetB = 0, offsetC = 0;                      \
+            for (int d = ndim - 1; d >= 0; d--) {                              \
+                size_t idx = tmp % shapeC[d];                                  \
+                tmp /= shapeC[d];                                              \
+                offsetA += idx * sA[d];                                        \
+                offsetB += idx * sB[d];                                        \
+                offsetC += idx * sC[d];                                        \
+            }                                                                  \
+            C[offsetC] = (A[offsetA] OP B[offsetB]) ? 1 : 0;                   \
+        }                                                                      \
+    }
+
+_ARRAY_CMP(int, _array_gt_i, >)
+_ARRAY_CMP(float, _array_gt_f, >)
+_ARRAY_CMP(double, _array_gt_d, >)
+_ARRAY_CMP(long int, _array_gt_l, >)
+
+_ARRAY_CMP(int, _array_ge_i, >=)
+_ARRAY_CMP(float, _array_ge_f, >=)
+_ARRAY_CMP(double, _array_ge_d, >=)
+_ARRAY_CMP(long int, _array_ge_l, >=)
+
+_ARRAY_CMP(int, _array_lt_i, <)
+_ARRAY_CMP(float, _array_lt_f, <)
+_ARRAY_CMP(double, _array_lt_d, <)
+_ARRAY_CMP(long int, _array_lt_l, <)
+
+_ARRAY_CMP(int, _array_le_i, <=)
+_ARRAY_CMP(float, _array_le_f, <=)
+_ARRAY_CMP(double, _array_le_d, <=)
+_ARRAY_CMP(long int, _array_le_l, <=)
+
+_ARRAY_CMP(int, _array_eq_i, ==)
+_ARRAY_CMP(float, _array_eq_f, ==)
+_ARRAY_CMP(double, _array_eq_d, ==)
+_ARRAY_CMP(long int, _array_eq_l, ==)
+
+DEFINE_DISPATCH_FUNC(gt, _array_max)
+DEFINE_DISPATCH_FUNC(ge, _array_min)
+DEFINE_DISPATCH_FUNC(lt, _array_max)
+DEFINE_DISPATCH_FUNC(le, _array_min)
+DEFINE_DISPATCH_FUNC(eq, _array_min)
+
+ndArray *array_gt(ndArray *arr1, ndArray *arr2) {
+    return array_binary_op(arr1, arr2, dispatch_gt);
+}
+
+ndArray *array_ge(ndArray *arr1, ndArray *arr2) {
+    return array_binary_op(arr1, arr2, dispatch_ge);
+}
+
+ndArray *array_lt(ndArray *arr1, ndArray *arr2) {
+    return array_binary_op(arr1, arr2, dispatch_lt);
+}
+
+ndArray *array_le(ndArray *arr1, ndArray *arr2) {
+    return array_binary_op(arr1, arr2, dispatch_le);
+}
+
+ndArray *array_eq(ndArray *arr1, ndArray *arr2) {
+    return array_binary_op(arr1, arr2, dispatch_eq);
+}
+
 ndArray *negative(ndArray *array) {
     size_t *shape = get_shape(array);
     int ndim = get_ndim(array);

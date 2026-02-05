@@ -105,4 +105,10 @@ void inversei(ndArray **array);
 ndArray *array_max(ndArray *arr1, ndArray *arr2);
 ndArray *array_min(ndArray *arr1, ndArray *arr2);
 
+ndArray *array_gt(ndArray *arr1, ndArray *arr2);
+ndArray *array_ge(ndArray *arr1, ndArray *arr2);
+ndArray *array_lt(ndArray *arr1, ndArray *arr2);
+ndArray *array_le(ndArray *arr1, ndArray *arr2);
+ndArray *array_eq(ndArray *arr1, ndArray *arr2);
+
 #endif // !ARRAY_H
