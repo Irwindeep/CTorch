@@ -6,12 +6,14 @@
 - [x] Autograd for tensor arithmetic
 - [x] Backpropagation loop
 - [x] Random tensor initialization
+- [ ] Tensor backward hooks
 - [ ] nn Modules
   - [x] Parent Module
   - [x] Sequential Container
   - [x] Linear Module
   - [ ] Activations
   - [ ] Loss Functions
+  - [ ] Module forward/backward hooks
 - [x] Autograd pipeline for higher order derivatives
 - [x] Parallelize with OpenMP
 - [ ] Visualization Module
