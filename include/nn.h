@@ -24,6 +24,8 @@ void add_tensor(Module *base, Tensor *tensor);
 
 size_t num_parameters(Module *module);
 void parameters(Module *module, Tensor **out);
+size_t num_trainable_variables(Module *module);
+size_t num_non_trainable_variables(Module *module);
 
 Tensor *module_call(Module *module, Tensor *tensor);
 

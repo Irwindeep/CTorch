@@ -1,3 +1,4 @@
+#include "array.h"
 #include "error_codes.h"
 #include "nn.h"
 #include "tensor.h"
@@ -56,6 +57,40 @@ static void _parameters(Module *module, Tensor **out, size_t *count) {
 void parameters(Module *module, Tensor **out) {
     size_t idx = 0;
     _parameters(module, out, &idx);
+}
+
+size_t num_trainable_variables(Module *module) {
+    size_t num_params = num_parameters(module);
+    Tensor *params[num_params];
+    parameters(module, params);
+
+    size_t num_trainable_vars = 0;
+    for (size_t i = 0; i < num_params; i++) {
+        Tensor *param = params[i];
+        if (!get_requires_grad(param))
+            continue;
+
+        num_trainable_vars += get_total_size(get_tensor_data(param));
+    }
+
+    return num_trainable_vars;
+}
+
+size_t num_non_trainable_variables(Module *module) {
+    size_t num_params = num_parameters(module);
+    Tensor *params[num_params];
+    parameters(module, params);
+
+    size_t num_non_trainable_vars = 0;
+    for (size_t i = 0; i < num_params; i++) {
+        Tensor *param = params[i];
+        if (get_requires_grad(param))
+            continue;
+
+        num_non_trainable_vars += get_total_size(get_tensor_data(param));
+    }
+
+    return num_non_trainable_vars;
 }
 
 Environment *get_environ(const Module *module) { return module->environ; }
