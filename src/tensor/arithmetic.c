@@ -88,3 +88,74 @@ Tensor *tensor_inv(Tensor *tensor) {
 
     return new_tensor;
 }
+
+Tensor *tensor_max(Tensor *t1, Tensor *t2) {
+    ndArray *data1 = get_tensor_data(t1), *data2 = get_tensor_data(t2);
+    ndArray *data = array_max(data1, data2);
+    bool requires_grad = get_requires_grad(t1) || get_requires_grad(t2);
+
+    Environment *env = resolve_environ(t1, t2);
+    Tensor *tensor = tensor_init(data, requires_grad, env);
+    if (requires_grad) {
+        BackwardFn *backward_fn =
+            MaxBackward((Tensor *[]){tensor}, (Tensor *[]){t1, t2}, 1, 2);
+        set_backward_fn(tensor, backward_fn);
+    }
+
+    return tensor;
+}
+
+Tensor *tensor_gt(Tensor *t1, Tensor *t2) {
+    ndArray *data1 = get_tensor_data(t1), *data2 = get_tensor_data(t2);
+    ndArray *data = array_gt(data1, data2);
+    bool requires_grad = false;
+
+    Environment *env = resolve_environ(t1, t2);
+    Tensor *tensor = tensor_init(data, requires_grad, env);
+
+    return tensor;
+}
+
+Tensor *tensor_ge(Tensor *t1, Tensor *t2) {
+    ndArray *data1 = get_tensor_data(t1), *data2 = get_tensor_data(t2);
+    ndArray *data = array_ge(data1, data2);
+    bool requires_grad = false;
+
+    Environment *env = resolve_environ(t1, t2);
+    Tensor *tensor = tensor_init(data, requires_grad, env);
+
+    return tensor;
+}
+
+Tensor *tensor_lt(Tensor *t1, Tensor *t2) {
+    ndArray *data1 = get_tensor_data(t1), *data2 = get_tensor_data(t2);
+    ndArray *data = array_lt(data1, data2);
+    bool requires_grad = false;
+
+    Environment *env = resolve_environ(t1, t2);
+    Tensor *tensor = tensor_init(data, requires_grad, env);
+
+    return tensor;
+}
+
+Tensor *tensor_le(Tensor *t1, Tensor *t2) {
+    ndArray *data1 = get_tensor_data(t1), *data2 = get_tensor_data(t2);
+    ndArray *data = array_le(data1, data2);
+    bool requires_grad = false;
+
+    Environment *env = resolve_environ(t1, t2);
+    Tensor *tensor = tensor_init(data, requires_grad, env);
+
+    return tensor;
+}
+
+Tensor *tensor_eq(Tensor *t1, Tensor *t2) {
+    ndArray *data1 = get_tensor_data(t1), *data2 = get_tensor_data(t2);
+    ndArray *data = array_eq(data1, data2);
+    bool requires_grad = false;
+
+    Environment *env = resolve_environ(t1, t2);
+    Tensor *tensor = tensor_init(data, requires_grad, env);
+
+    return tensor;
+}

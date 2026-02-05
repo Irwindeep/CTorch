@@ -23,4 +23,7 @@ _DECLARE_GRAD_FN(_transpose_grad_fn)
 _DECLARE_GRAD_FN(_matmul_grad_fn)
 _DECLARE_GRAD_FN(_sum_grad_fn)
 
+_DECLARE_GRAD_FN(_max_grad_fn)
+_DECLARE_GRAD_FN(_min_grad_fn)
+
 #endif // !CALLABLE_GRADS_H

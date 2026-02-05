@@ -78,6 +78,15 @@ Tensor *tensor_inv(Tensor *tensor);
 Tensor *tensor_transpose(Tensor *tensor, int *dims);
 Tensor *tensor_matmul(Tensor *t1, Tensor *t2);
 
+Tensor *tensor_max(Tensor *t1, Tensor *t2);
+Tensor *tensor_min(Tensor *t1, Tensor *t2);
+
+Tensor *tensor_gt(Tensor *t1, Tensor *t2);
+Tensor *tensor_ge(Tensor *t1, Tensor *t2);
+Tensor *tensor_lt(Tensor *t1, Tensor *t2);
+Tensor *tensor_le(Tensor *t1, Tensor *t2);
+Tensor *tensor_eq(Tensor *t1, Tensor *t2);
+
 #define SHAPE(...)                                                             \
     (sizeof((size_t[]){__VA_ARGS__}) / sizeof(size_t)),                        \
         ((const size_t[]){__VA_ARGS__})
