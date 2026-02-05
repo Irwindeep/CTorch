@@ -10,6 +10,28 @@
 #include <stdlib.h>
 #include <string.h>
 
+void print_with_commas(size_t num) {
+    char buf[32];
+    char out[32];
+    int len, i, j, count = 0;
+
+    snprintf(buf, sizeof(buf), "%zu", num);
+    len = strlen(buf);
+
+    out[31] = '\0';
+    j = 30;
+
+    for (i = len - 1; i >= 0; i--) {
+        out[j--] = buf[i];
+        if (++count == 3 && i != 0) {
+            out[j--] = ',';
+            count = 0;
+        }
+    }
+
+    printf("%s\n", &out[j + 1]);
+}
+
 static void print_indent(int n) {
     for (int i = 0; i < n; ++i)
         putchar(' ');

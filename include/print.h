@@ -7,6 +7,8 @@
 #define BASE_INDENT 7
 #define PRINT_EDGE_ITEMS 3
 
+void print_with_commas(size_t num);
+
 void print_array(const ndArray *array, int base_indent);
 void print_shape(const ndArray *array);
 
