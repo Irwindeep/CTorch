@@ -35,6 +35,9 @@ typedef enum {
     /* random related error codes 40<x> */
     PRNG_INIT_FAILURE = 401,
     INVALID_LOW_HIGH = 402,
+
+    /* neural nets related error codes 50<x> */
+    MODULE_ALLOC_FAILURE = 501,
 } ErrorCode;
 
 extern const char *ErrorCodes[];

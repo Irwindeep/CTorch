@@ -40,6 +40,9 @@ static const ErrorInfo error_table[] = {
     /* random related error codes 40<x> */
     {PRNG_INIT_FAILURE, "PRNG_INIT_FAILURE"},
     {INVALID_LOW_HIGH, "INVALID_LOW_HIGH"},
+
+    /* neural nets related error codes 50<x> */
+    {MODULE_ALLOC_FAILURE, "MODULE_ALLOC_FAILURE"},
 };
 
 const char *error_code_to_string(ErrorCode code) {
