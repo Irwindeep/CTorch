@@ -102,4 +102,7 @@ void array_sum_dimi(ndArray **array, int dim, bool keepdims);
 void negativei(ndArray **array);
 void inversei(ndArray **array);
 
+ndArray *array_max(ndArray *arr1, ndArray *arr2);
+ndArray *array_min(ndArray *arr1, ndArray *arr2);
+
 #endif // !ARRAY_H
