@@ -197,7 +197,7 @@ ndArray *array_min(ndArray *arr1, ndArray *arr2) {
                 offsetB += idx * sB[d];                                        \
                 offsetC += idx * sC[d];                                        \
             }                                                                  \
-            C[offsetC] = (A[offsetA] OP B[offsetB]) ? 1 : 0;                   \
+            C[offsetC] = (A[offsetA] OP B[offsetB]) ? (T)1 : (T)0;             \
         }                                                                      \
     }
 
