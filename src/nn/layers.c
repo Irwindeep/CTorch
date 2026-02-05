@@ -4,6 +4,7 @@
 #include "random.h"
 #include "tensor.h"
 
+#include <math.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdio.h>
@@ -37,10 +38,12 @@ linear *_Linear(size_t in_features, size_t out_features, bool bias) {
     layer->base.repr = strdup(tmp);
     layer->base.repr_dynamic = true;
 
-    layer->weight =
-        randn(SHAPE(in_features, out_features), DTYPE_FLOAT, true, env);
+    float bound = 1 / sqrtf((float)in_features);
+    layer->weight = uniform(SHAPE(in_features, out_features), bound,
+                            DTYPE_FLOAT, true, env);
     if (bias)
-        layer->bias = randn(SHAPE(1, out_features), DTYPE_FLOAT, true, env);
+        layer->bias =
+            uniform(SHAPE(1, out_features), bound, DTYPE_FLOAT, true, env);
 
     set_lock(env);
     return layer;

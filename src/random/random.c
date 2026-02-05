@@ -16,8 +16,8 @@ static inline float prng_uniform_f(PRNG *rng) {
     return (rng_rand(rng) >> 40) * (1.0f / 16777216.0f);
 }
 
-Tensor *uniform(int ndim, const size_t *shape, DType dtype, bool requires_grad,
-                Environment *environ) {
+Tensor *uniform(int ndim, const size_t *shape, float bound, DType dtype,
+                bool requires_grad, Environment *environ) {
     if (dtype != DTYPE_DOUBLE && dtype != DTYPE_FLOAT)
         RUNTIME_ERROR(INVALID_DTYPE, "Invalid dtype for uniform tensor");
 
@@ -34,7 +34,7 @@ Tensor *uniform(int ndim, const size_t *shape, DType dtype, bool requires_grad,
             break;
         }
         for (size_t i = 0; i < total_size; i++)
-            arr_data[i] = prng_uniform_d(global_rng);
+            arr_data[i] = (2 * prng_uniform_d(global_rng) - 1) * bound;
 
         populate_array(data, arr_data);
         free(arr_data);
@@ -47,7 +47,7 @@ Tensor *uniform(int ndim, const size_t *shape, DType dtype, bool requires_grad,
             break;
         }
         for (size_t i = 0; i < total_size; i++)
-            arr_data[i] = prng_uniform_f(global_rng);
+            arr_data[i] = (2 * prng_uniform_f(global_rng) - 1) * bound;
 
         populate_array(data, arr_data);
         free(arr_data);
