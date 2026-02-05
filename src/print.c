@@ -138,7 +138,7 @@ static int compute_max_width(const ndArray *array) {
     return max_width;
 }
 
-void print_array(const ndArray *array) {
+void print_array(const ndArray *array, int base_indent) {
     if (array == NULL) {
         printf("NULL\n");
         return;
@@ -159,7 +159,7 @@ void print_array(const ndArray *array) {
         }
     }
     int max_width = compute_max_width(array);
-    print_rec(array, 0, idx, 0, BASE_INDENT, max_width);
+    print_rec(array, 0, idx, 0, base_indent, max_width);
 }
 
 void print_shape(const ndArray *array) {
@@ -180,7 +180,7 @@ void print_tensor(const Tensor *tensor) {
 
     const ndArray *data = get_tensor_data(tensor);
     printf("Tensor(");
-    print_array(data);
+    print_array(data, BASE_INDENT);
 
     bool requires_grad = get_requires_grad(tensor);
     BackwardFn *backward_fn = get_backward_fn(tensor);
