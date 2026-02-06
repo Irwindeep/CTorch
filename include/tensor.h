@@ -51,6 +51,7 @@ BackwardFn *get_backward_fn(const Tensor *tensor);
 
 void set_requires_grad(Tensor *tensor, bool requires_grad);
 
+void set_tensor_data(Tensor *tensor, ndArray *data);
 void set_tensor_grad(Tensor *tensor, Tensor *grad);
 void set_backward_fn(Tensor *tensor, BackwardFn *backward_fn);
 

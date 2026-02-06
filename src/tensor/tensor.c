@@ -167,6 +167,13 @@ void set_requires_grad(Tensor *tensor, bool requires_grad) {
     tensor->requires_grad = requires_grad;
 }
 
+void set_tensor_data(Tensor *tensor, ndArray *data) {
+    if (tensor->data)
+        free_array(tensor->data);
+
+    tensor->data = data;
+}
+
 void set_tensor_grad(Tensor *tensor, Tensor *grad) {
     if (tensor->grad) {
         Environment *env = tensor->grad->environ;
