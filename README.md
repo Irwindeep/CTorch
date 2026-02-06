@@ -16,6 +16,8 @@
   - [ ] Module forward/backward hooks
 - [x] Autograd pipeline for higher order derivatives
 - [x] Parallelize with OpenMP
+- [ ] BLAS for matmul operations
+- [ ] SIMD for elementwise ops
 - [ ] Visualization Module
   - [ ] Line plots
   - [ ] Heatmaps
