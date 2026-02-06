@@ -64,5 +64,7 @@ relu *_ReLU() {
     layer->base.forward = relu_forward;
     layer->base.repr = "ReLU()";
 
+    Environment *env = get_environ(&layer->base);
+    set_lock(env);
     return layer;
 }

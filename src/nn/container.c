@@ -66,5 +66,7 @@ sequential *_Sequential(size_t num_modules, Module **modules) {
     layer->base.repr = tmp;
     layer->base.repr_dynamic = true;
 
+    Environment *env = get_environ(&layer->base);
+    set_lock(env);
     return layer;
 }

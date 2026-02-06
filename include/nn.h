@@ -22,6 +22,12 @@ void module_init(Module *module);
 void add_module(Module *base, Module *child);
 void add_tensor(Module *base, Tensor *tensor);
 
+#define AddModule(m, field, expr)                                              \
+    do {                                                                       \
+        (m)->field = (expr);                                                   \
+        add_module(&(m)->base, (m)->field);                                    \
+    } while (0)
+
 size_t num_parameters(Module *module);
 void parameters(Module *module, Tensor **out);
 size_t num_trainable_variables(Module *module);
