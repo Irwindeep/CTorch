@@ -6,7 +6,6 @@
 #include <CUnit/TestRun.h>
 #include <stdbool.h>
 #include <stddef.h>
-#include <stdio.h>
 #include <stdlib.h>
 
 static inline ssize_t find_input(const Tensor *t, Tensor **inputs,
@@ -30,7 +29,6 @@ static void _gradient_backward(Tensor **inputs, Tensor **grads,
     CallableGradFn grad_fn = get_grad_fn(backward_fn);
 
     Tensor *op_grads[num_fn_outputs];
-    printf("<%s %p>\n", get_backward_name(backward_fn), backward_fn);
     grad_fn(op_grads, cur_inputs, outputs, cur_grads, num_fn_inputs,
             num_fn_outputs, create_graph);
 
