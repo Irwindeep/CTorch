@@ -4,7 +4,7 @@
 
 #include <stdbool.h>
 
-Tensor *tensor_transpose(Tensor *tensor, int *dims, Environment *environ) {
+Tensor *tensor_transpose(Tensor *tensor, int *dims) {
     int ndim = get_tensor_ndim(tensor);
 
     int _dims[ndim];
@@ -17,9 +17,37 @@ Tensor *tensor_transpose(Tensor *tensor, int *dims, Environment *environ) {
 
     ndArray *_data = get_tensor_data(tensor);
     bool requires_grad = get_requires_grad(tensor);
-    Environment *env = environ;
-    if (!env)
-        env = get_tensor_environ(tensor);
+
+    Environment *env = get_tensor_environ(tensor);
+    ndArray *data = transpose(_data, dims);
+    Tensor *new_tensor = tensor_init(data, requires_grad, env);
+
+    if (requires_grad) {
+        BackwardFn *backward_fn = TransposeBackward((Tensor *[]){new_tensor},
+                                                    (Tensor *[]){tensor}, 1, 1);
+
+        TransposeCtx ctx = {.ndim = get_tensor_ndim(tensor),
+                            .dims = (int *)dims};
+        set_ctx(backward_fn, &ctx, TRANSPOSE_CTX);
+        set_backward_fn(new_tensor, backward_fn);
+    }
+
+    return new_tensor;
+}
+
+Tensor *tensor_transpose_env(Tensor *tensor, int *dims, Environment *env) {
+    int ndim = get_tensor_ndim(tensor);
+
+    int _dims[ndim];
+    if (!dims) {
+        for (int d = 0; d < ndim; d++)
+            _dims[d] = ndim - d - 1;
+
+        dims = _dims;
+    }
+
+    ndArray *_data = get_tensor_data(tensor);
+    bool requires_grad = get_requires_grad(tensor);
 
     ndArray *data = transpose(_data, dims);
     Tensor *new_tensor = tensor_init(data, requires_grad, env);

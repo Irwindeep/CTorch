@@ -78,7 +78,8 @@ Tensor *tensor_div(Tensor *t1, Tensor *t2);
 Tensor *tensor_neg(Tensor *tensor);
 Tensor *tensor_inv(Tensor *tensor);
 
-Tensor *tensor_transpose(Tensor *tensor, int *dims, Environment *environ);
+Tensor *tensor_transpose(Tensor *tensor, int *dims);
+Tensor *tensor_transpose_env(Tensor *tensor, int *dims, Environment *env);
 Tensor *tensor_matmul(Tensor *t1, Tensor *t2);
 
 Tensor *tensor_max(Tensor *t1, Tensor *t2);
