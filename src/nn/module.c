@@ -1,11 +1,36 @@
 #include "array.h"
 #include "error_codes.h"
 #include "nn.h"
+#include "random.h"
 #include "tensor.h"
 
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
+
+Tensor *Parameter(int ndim, const size_t *shape, float bound,
+                  Environment *env) {
+    return uniform(ndim, shape, bound, DTYPE_FLOAT, true, env);
+}
+
+void freeze(Module *module) {
+    size_t num_params = num_parameters(module);
+    Tensor *params[num_params];
+    parameters(module, params);
+
+    for (size_t i = 0; i < num_params; i++)
+        set_requires_grad(params[i], false);
+}
+
+void unfreeze(Module *module) {
+    size_t num_params = num_parameters(module);
+    Tensor *params[num_params];
+    parameters(module, params);
+
+    for (size_t i = 0; i < num_params; i++)
+        set_requires_grad(params[i], true);
+}
 
 void module_init(Module *module) {
     module->modules = NULL;

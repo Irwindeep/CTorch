@@ -1,6 +1,7 @@
 #ifndef NN_H
 #define NN_H
 
+#include "error_codes.h"
 #include "tensor.h"
 #include <stddef.h>
 
@@ -17,6 +18,11 @@ struct Module {
     const char *repr;
     bool repr_dynamic;
 };
+
+Tensor *Parameter(int ndim, const size_t *shape, float bound, Environment *env);
+
+void freeze(Module *module);
+void unfreeze(Module *module);
 
 void module_init(Module *module);
 void add_module(Module *base, Module *child);
@@ -62,5 +68,22 @@ sequential *_Sequential(size_t num_modules, Module **modules);
         ((Module *[]){__VA_ARGS__}));
 
 void free_module(Module *module);
+
+#define ModuleInit(ptr, type, name)                                            \
+    do {                                                                       \
+        (ptr) = calloc(1, sizeof(type));                                       \
+        if (!(ptr)) {                                                          \
+            RUNTIME_ERRORF(MODULE_ALLOC_FAILURE,                               \
+                           "Failure to allocate module `%s`", #type);          \
+        }                                                                      \
+        module_init(&(ptr)->base);                                             \
+                                                                               \
+        (ptr)->base.repr = name;                                               \
+    } while (0)
+
+#define ModuleClose(ptr)                                                       \
+    do {                                                                       \
+        set_lock(get_environ(&(ptr)->base));                                   \
+    } while (0)
 
 #endif // !NN_H
