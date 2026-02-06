@@ -42,6 +42,9 @@ void free_env(Environment *environ) {
 }
 
 void env_push(Environment *environ, Tensor *tensor) {
+    if (environ->lock)
+        RUNTIME_ERROR(INVALID_ARRAY, "Invalid access to locked environment");
+
     if (environ->num_tensors == environ->capacity) {
         size_t new_capacity = 2 * environ->capacity;
         Tensor **new_tensors =
@@ -64,6 +67,26 @@ Tensor *env_pop(Environment *environ) {
 
     Tensor *tensor = environ->tensors[--environ->num_tensors];
     return tensor;
+}
+
+bool env_remove_and_free(Environment *environ, const Tensor *target) {
+    if (!environ || !target)
+        return false;
+
+    for (size_t i = 0; i < environ->num_tensors; i++) {
+        if (environ->tensors[i] == target) {
+            free_tensor(environ->tensors[i]);
+
+            for (size_t j = i + 1; j < environ->num_tensors; j++) {
+                environ->tensors[j - 1] = environ->tensors[j];
+            }
+
+            environ->num_tensors--;
+            return true;
+        }
+    }
+
+    return false;
 }
 
 Tensor **get_tensors(const Environment *environ) { return environ->tensors; }

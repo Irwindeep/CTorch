@@ -20,6 +20,7 @@ void free_env(Environment *environ);
 
 void env_push(Environment *environ, Tensor *tensor);
 Tensor *env_pop(Environment *environ);
+bool env_remove_and_free(Environment *environ, const Tensor *target);
 
 Tensor **get_tensors(const Environment *environ);
 size_t get_num_tensors(const Environment *environ);
@@ -65,6 +66,7 @@ Tensor *zeros_like(const Tensor *tensor, bool requires_grad, Environment *env);
 Tensor *ones_like(const Tensor *tensor, bool requires_grad, Environment *env);
 Tensor *scalar(ArrayVal value, DType dtype, bool requires_grad,
                Environment *environ);
+ArrayVal item(const Tensor *tensor);
 
 Tensor *tensor_sum(Tensor *tensor);
 

@@ -50,7 +50,7 @@ static inline void _broadcast_grad_fn(Tensor **output_grads, Tensor **inputs,
         ndArray *data = copy_array(grad);
 
         data = broadcast_grad_data(data, ndim, shape);
-        t = tensor_init(data, false, get_tensor_environ(outputs[0]));
+        t = tensor_init(data, false, get_tensor_environ(inputs[0]));
     }
 
     output_grads[0] = t;

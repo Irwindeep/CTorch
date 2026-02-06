@@ -167,7 +167,17 @@ void set_requires_grad(Tensor *tensor, bool requires_grad) {
     tensor->requires_grad = requires_grad;
 }
 
-void set_tensor_grad(Tensor *tensor, Tensor *grad) { tensor->grad = grad; }
+void set_tensor_grad(Tensor *tensor, Tensor *grad) {
+    if (tensor->grad) {
+        Environment *env = tensor->grad->environ;
+        bool removed = env_remove_and_free(env, tensor->grad);
+        if (!removed)
+            RUNTIME_ERROR(INVALID_GRAD, "Gradient not found in environment");
+    }
+
+    tensor->grad = grad;
+}
+
 void set_backward_fn(Tensor *tensor, BackwardFn *backward_fn) {
     tensor->backward_fn = backward_fn;
 }
@@ -176,7 +186,25 @@ void zero_grad(Tensor *tensor) {
     int ndim = get_ndim(tensor->data);
     const size_t *shape = get_shape(tensor->data);
     DType dtype = get_dtype(tensor->data);
-    tensor->grad = zeros_tensor(ndim, shape, dtype, false, tensor->environ);
+
+    if (tensor->grad) {
+        Environment *env = tensor->grad->environ;
+        bool removed = env_remove_and_free(env, tensor->grad);
+        if (!removed)
+            RUNTIME_ERROR(INVALID_GRAD, "Gradient not found in environment");
+    }
+
+    Environment *env = tensor->environ;
+    bool was_locked = false;
+    if (get_lock(env)) {
+        open_lock(env);
+        was_locked = true;
+    }
+
+    tensor->grad = zeros_tensor(ndim, shape, dtype, false, env);
+
+    if (was_locked)
+        set_lock(env);
 }
 
 Tensor *eye_tensor(size_t m, size_t n, DType dtype, bool requires_grad,
@@ -228,4 +256,14 @@ Tensor *scalar(ArrayVal value, DType dtype, bool requires_grad,
 
     Tensor *tensor = tensor_init(data, requires_grad, environ);
     return tensor;
+}
+
+ArrayVal item(const Tensor *tensor) {
+    if (get_tensor_ndim(tensor) != 0)
+        RUNTIME_ERROR(INVALID_DIM, "Invalid ndim for item");
+
+    ndArray *data = get_tensor_data(tensor);
+    const ArrayVal *x = (ArrayVal *)get_array_data(data);
+    ArrayVal value = x[0];
+    return value;
 }
