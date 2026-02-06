@@ -171,7 +171,7 @@ void _transpose_grad_fn(Tensor **output_grads, Tensor **inputs,
     Tensor *t;
     if (create_graph) {
         Tensor *grad_tensor = input_grads[0];
-        t = tensor_transpose(grad_tensor, dims);
+        t = tensor_transpose(grad_tensor, dims, get_tensor_environ(inputs[0]));
     } else {
         ndArray *grad = get_tensor_data(input_grads[0]);
         ndArray *data = transpose(grad, dims);
@@ -205,7 +205,8 @@ void _matmul_grad_fn(Tensor **output_grads, Tensor **inputs, Tensor **outputs,
         Tensor *t;
         if (create_graph) {
             Tensor *other_tensor = outputs[num_outputs - i - 1];
-            Tensor *other_tensor_T = tensor_transpose(other_tensor, dims);
+            Tensor *other_tensor_T = tensor_transpose(
+                other_tensor, dims, get_tensor_environ(inputs[0]));
             Tensor *args[2] = {grad_tensor, other_tensor_T};
 
             t = tensor_matmul(args[i], args[1 - i]);
