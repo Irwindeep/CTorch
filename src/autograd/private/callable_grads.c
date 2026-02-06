@@ -6,21 +6,30 @@
 
 #include <stdbool.h>
 #include <stddef.h>
+#include <stdio.h>
 #include <stdlib.h>
 
-void _accumulate_grad_fn(Tensor **output_grads, Tensor **inputs,
-                         Tensor **outputs, Tensor **input_grads,
-                         size_t num_inputs, size_t num_outputs,
-                         bool create_graph) {
-    if (num_inputs != 1 || num_outputs != 0)
-        RUNTIME_ERROR(INVALID_NUM_INPUTS_OUTPUTS,
-                      "Invalid number of inputs/outputs");
+#define _DEFINE_GRAD_FN(name, n_inputs, n_outputs, ...)                        \
+    void name(Tensor **output_grads, Tensor **inputs, Tensor **outputs,        \
+              Tensor **input_grads, size_t num_inputs, size_t num_outputs,     \
+              bool create_graph) {                                             \
+        if (num_inputs != n_inputs || num_outputs != n_outputs) {              \
+            RUNTIME_ERRORF(INVALID_NUM_INPUTS_OUTPUTS,                         \
+                           "Invalid number of inputs (%zu, expected %zu) or "  \
+                           "outputs (%zu, expected %zu) in function `%s`",     \
+                           num_inputs, (size_t)n_inputs, num_outputs,          \
+                           (size_t)n_outputs, #name);                          \
+        }                                                                      \
+        __VA_ARGS__                                                            \
+    }
 
-    if (create_graph)
+_DEFINE_GRAD_FN(_accumulate_grad_fn, 1, 0, {
+    if (create_graph) {
         return;
+    }
 
-    Tensor *tensor = inputs[0];
-    Tensor *grad = input_grads[0];
+    Tensor *tensor = inputs[0], *grad = input_grads[0];
+    Environment *env = get_tensor_environ(tensor);
 
     Tensor *tensor_grad = get_tensor_grad(tensor);
     if (!tensor_grad) {
@@ -31,301 +40,256 @@ void _accumulate_grad_fn(Tensor **output_grads, Tensor **inputs,
     ndArray *sum =
         array_add(get_tensor_data(tensor_grad), get_tensor_data(grad));
 
-    Environment *env = get_tensor_environ(tensor);
-    bool was_locked = false;
+    bool is_locked = false;
     if (get_lock(env)) {
         open_lock(env);
-        was_locked = true;
+        is_locked = true;
     }
+    set_tensor_grad(tensor, tensor_init(sum, NO_GRAD, env));
 
-    set_tensor_grad(tensor, tensor_init(sum, false, env));
-    if (was_locked)
+    if (is_locked)
         set_lock(env);
-}
+})
 
-void _add_grad_fn(Tensor **output_grads, Tensor **inputs, Tensor **outputs,
-                  Tensor **input_grads, size_t num_inputs, size_t num_outputs,
-                  bool create_graph) {
-    if (num_inputs != 1 || num_outputs != 2)
-        RUNTIME_ERROR(INVALID_NUM_INPUTS_OUTPUTS,
-                      "Invalid number of inputs/outputs");
+_DEFINE_GRAD_FN(_add_grad_fn, 1, 2, {
+    Tensor *tensor = inputs[0], *grad = input_grads[0];
+    Tensor *t1 = outputs[0], *t2 = outputs[1];
+    size_t t1_ndim = get_tensor_ndim(t1), t2_ndim = get_tensor_ndim(t2);
+    const size_t *t1_shape = get_tensor_shape(t1),
+                 *t2_shape = get_tensor_shape(t2);
 
-    ndArray *grad = get_tensor_data(input_grads[0]);
-
-    for (size_t i = 0; i < num_outputs; i++) {
-        int ndim = get_tensor_ndim(outputs[i]);
-        const size_t *shape = get_tensor_shape(outputs[i]);
-
-        Tensor *t;
-        if (create_graph) {
-            Tensor *grad_tensor = input_grads[0];
-            t = broadcast_tensor_grad(grad_tensor, ndim, shape);
-        } else {
-            ndArray *data = copy_array(grad);
-            data = broadcast_grad_data(data, ndim, shape);
-
-            t = tensor_init(data, false, get_tensor_environ(inputs[0]));
-        }
-        output_grads[i] = t;
-    }
-}
-
-void _mul_grad_fn(Tensor **output_grads, Tensor **inputs, Tensor **outputs,
-                  Tensor **input_grads, size_t num_inputs, size_t num_outputs,
-                  bool create_graph) {
-    if (num_inputs != 1 || num_outputs != 2)
-        RUNTIME_ERROR(INVALID_NUM_INPUTS_OUTPUTS,
-                      "Invalid number of inputs/outputs");
-
-    ndArray *grad = get_tensor_data(input_grads[0]);
-    Tensor *grad_tensor = input_grads[0];
-
-    for (size_t i = 0; i < num_outputs; i++) {
-        int ndim = get_tensor_ndim(outputs[i]);
-        const size_t *shape = get_tensor_shape(outputs[i]);
-
-        Tensor *t;
-        if (create_graph) {
-            Tensor *other_tensor = outputs[num_outputs - i - 1];
-            t = tensor_mul(grad_tensor, other_tensor);
-            t = broadcast_tensor_grad(t, ndim, shape);
-        } else {
-            ndArray *other_arr = get_tensor_data(outputs[num_outputs - i - 1]);
-            ndArray *data = copy_array(grad);
-            array_muli(&data, other_arr);
-
-            data = broadcast_grad_data(data, ndim, shape);
-            t = tensor_init(data, false, get_tensor_environ(inputs[0]));
-        }
-        output_grads[i] = t;
-    }
-}
-
-void _neg_grad_fn(Tensor **output_grads, Tensor **inputs, Tensor **outputs,
-                  Tensor **input_grads, size_t num_inputs, size_t num_outputs,
-                  bool create_graph) {
-    if (num_inputs != 1 || num_outputs != 1)
-        RUNTIME_ERROR(INVALID_NUM_INPUTS_OUTPUTS,
-                      "Invalid number of inputs/outputs");
-
-    ndArray *grad = get_tensor_data(input_grads[0]);
-
-    Tensor *t;
+    Environment *env = get_tensor_environ(tensor);
     if (create_graph) {
-        Tensor *grad_tensor = input_grads[0];
-        t = tensor_neg(grad_tensor);
+        output_grads[0] = broadcast_tensor_grad(grad, t1_ndim, t1_shape);
+        output_grads[1] = broadcast_tensor_grad(grad, t2_ndim, t2_shape);
     } else {
-        ndArray *data = copy_array(grad);
-        negativei(&data);
+        ndArray *data1_grad = copy_array(get_tensor_data(grad)),
+                *data2_grad = copy_array(get_tensor_data(grad));
 
-        t = tensor_init(data, false, get_tensor_environ(inputs[0]));
+        data1_grad = broadcast_grad_data(data1_grad, t1_ndim, t1_shape);
+        data2_grad = broadcast_grad_data(data2_grad, t2_ndim, t2_shape);
+
+        output_grads[0] = tensor_init(data1_grad, NO_GRAD, env);
+        output_grads[1] = tensor_init(data2_grad, NO_GRAD, env);
     }
-    output_grads[0] = t;
-}
+})
 
-void _inv_grad_fn(Tensor **output_grads, Tensor **inputs, Tensor **outputs,
-                  Tensor **input_grads, size_t num_inputs, size_t num_outputs,
-                  bool create_graph) {
-    if (num_inputs != 1 || num_outputs != 1)
-        RUNTIME_ERROR(INVALID_NUM_INPUTS_OUTPUTS,
-                      "Invalid number of inputs/outputs");
+_DEFINE_GRAD_FN(_mul_grad_fn, 1, 2, {
+    Tensor *tensor = inputs[0], *grad = input_grads[0];
+    Tensor *t1 = outputs[0], *t2 = outputs[1];
+    size_t t1_ndim = get_tensor_ndim(t1), t2_ndim = get_tensor_ndim(t2);
+    const size_t *t1_shape = get_tensor_shape(t1),
+                 *t2_shape = get_tensor_shape(t2);
 
-    ndArray *grad = get_tensor_data(input_grads[0]);
-
-    Tensor *t;
+    Environment *env = get_tensor_environ(tensor);
     if (create_graph) {
-        Tensor *grad_tensor = input_grads[0];
+        Tensor *t1_grad = tensor_mul(t2, grad);
+        Tensor *t2_grad = tensor_mul(t1, grad);
 
-        t = inputs[0];
-        t = tensor_mul(t, grad_tensor);
-        t = tensor_mul(t, t);
-        t = tensor_neg(t);
+        output_grads[0] = broadcast_tensor_grad(t1_grad, t1_ndim, t1_shape);
+        output_grads[1] = broadcast_tensor_grad(t2_grad, t2_ndim, t2_shape);
     } else {
-        ndArray *data = copy_array(get_tensor_data(inputs[0]));
-        array_muli(&data, grad);
-        array_muli(&data, data);
-        negativei(&data);
+        ndArray *data1 = get_tensor_data(t1), *data2 = get_tensor_data(t2),
+                *grad_data = get_tensor_data(grad);
 
-        t = tensor_init(data, false, get_tensor_environ(inputs[0]));
+        ndArray *data1_grad = array_mul(data2, grad_data);
+        ndArray *data2_grad = array_mul(data1, grad_data);
+
+        data1_grad = broadcast_grad_data(data1_grad, t1_ndim, t1_shape);
+        data2_grad = broadcast_grad_data(data2_grad, t2_ndim, t2_shape);
+
+        output_grads[0] = tensor_init(data1_grad, NO_GRAD, env);
+        output_grads[1] = tensor_init(data2_grad, NO_GRAD, env);
     }
-    output_grads[0] = t;
-}
+})
 
-void _transpose_grad_fn(Tensor **output_grads, Tensor **inputs,
-                        Tensor **outputs, Tensor **input_grads,
-                        size_t num_inputs, size_t num_outputs,
-                        bool create_graph) {
-    if (num_inputs != 1 || num_outputs != 1)
-        RUNTIME_ERROR(INVALID_NUM_INPUTS_OUTPUTS,
-                      "Invalid number of inputs/outputs");
+_DEFINE_GRAD_FN(_neg_grad_fn, 1, 1, {
+    Tensor *new_tensor = inputs[0], *grad = input_grads[0];
 
-    BackwardFn *bk_fn = get_backward_fn(inputs[0]);
-    Ctx ctx_kind = get_ctx_kind(bk_fn);
-    if (ctx_kind != TRANSPOSE_CTX)
-        RUNTIME_ERROR(INVALID_BACKWARD_PASS,
-                      "Invalid context kind for _transpose_grad_fn");
+    Environment *env = get_tensor_environ(new_tensor);
+    if (create_graph) {
+        output_grads[0] = tensor_neg(grad);
+    } else {
+        ndArray *data_grad = negative(get_tensor_data(grad));
+        output_grads[0] = tensor_init(data_grad, NO_GRAD, env);
+    }
+})
 
-    TransposeCtx *ctx = (TransposeCtx *)get_ctx(bk_fn);
+_DEFINE_GRAD_FN(_inv_grad_fn, 1, 1, {
+    Tensor *new_tensor = inputs[0], *grad = input_grads[0];
+
+    Environment *env = get_tensor_environ(new_tensor);
+    if (create_graph) {
+        Tensor *tensor_grad = tensor_mul(new_tensor, new_tensor);
+        tensor_grad = tensor_mul(tensor_grad, grad);
+        output_grads[0] = tensor_neg(tensor_grad);
+    } else {
+        ndArray *new_data = get_tensor_data(new_tensor);
+
+        ndArray *data_grad = array_mul(new_data, new_data);
+        array_muli(&data_grad, get_tensor_data(grad));
+        negativei(&data_grad);
+
+        output_grads[0] = tensor_init(data_grad, NO_GRAD, env);
+    }
+})
+
+_DEFINE_GRAD_FN(_transpose_grad_fn, 1, 1, {
+    Tensor *new_tensor = inputs[0], *grad = input_grads[0];
+
+    BackwardFn *backward_fn = get_backward_fn(new_tensor);
+    Ctx ctx_kind = get_ctx_kind(backward_fn);
+    if (ctx_kind != TRANSPOSE_CTX) {
+        RUNTIME_ERRORF(INVALID_BACKWARD_PASS, "Invalid context kind for `%s`",
+                       __func__);
+    }
+    TransposeCtx *ctx = (TransposeCtx *)get_ctx(backward_fn);
     int *dims = ctx->dims;
 
-    Tensor *t;
+    Environment *env = get_tensor_environ(new_tensor);
     if (create_graph) {
-        Tensor *grad_tensor = input_grads[0];
-        t = tensor_transpose(grad_tensor, dims, get_tensor_environ(inputs[0]));
+        output_grads[0] = tensor_transpose_env(grad, dims, env);
     } else {
-        ndArray *grad = get_tensor_data(input_grads[0]);
-        ndArray *data = transpose(grad, dims);
-        t = tensor_init(data, false, get_tensor_environ(inputs[0]));
+        ndArray *data_grad = transpose(get_tensor_data(grad), dims);
+        output_grads[0] = tensor_init(data_grad, NO_GRAD, env);
     }
-    output_grads[0] = t;
+})
+
+static void inline _get_dims_for_matmul_grad(Tensor *t, int *dims) {
+    int ndim = get_tensor_ndim(t);
+    for (int d = 0; d < ndim; d++)
+        dims[d] = d;
+
+    dims[ndim - 1] = ndim - 2;
+    dims[ndim - 2] = ndim - 1;
 }
 
-void _matmul_grad_fn(Tensor **output_grads, Tensor **inputs, Tensor **outputs,
-                     Tensor **input_grads, size_t num_inputs,
-                     size_t num_outputs, bool create_graph) {
-    if (num_inputs != 1 || num_outputs != 2)
-        RUNTIME_ERROR(INVALID_NUM_INPUTS_OUTPUTS,
-                      "Invalid number of inputs/outputs");
+_DEFINE_GRAD_FN(_matmul_grad_fn, 1, 2, {
+    Tensor *tensor = inputs[0], *grad = input_grads[0];
+    Tensor *t1 = outputs[0], *t2 = outputs[1];
+    size_t t1_ndim = get_tensor_ndim(t1), t2_ndim = get_tensor_ndim(t2);
+    const size_t *t1_shape = get_tensor_shape(t1),
+                 *t2_shape = get_tensor_shape(t2);
 
-    ndArray *grad = get_tensor_data(input_grads[0]);
-    Tensor *grad_tensor = input_grads[0];
+    int t1_dims[t1_ndim], t2_dims[t2_ndim];
+    _get_dims_for_matmul_grad(t1, t1_dims);
+    _get_dims_for_matmul_grad(t2, t2_dims);
 
-    for (size_t i = 0; i < num_outputs; i++) {
-        int ndim = get_tensor_ndim(outputs[i]);
-        const size_t *shape = get_tensor_shape(outputs[i]);
-
-        int ndim_oth = get_tensor_ndim(outputs[num_outputs - i - 1]);
-        int dims[ndim_oth] = {};
-        for (int d = 0; d < ndim_oth; d++)
-            dims[d] = d;
-
-        dims[ndim_oth - 1] = ndim_oth - 2;
-        dims[ndim_oth - 2] = ndim_oth - 1;
-
-        Tensor *t;
-        if (create_graph) {
-            Tensor *other_tensor = outputs[num_outputs - i - 1];
-            Tensor *other_tensor_T = tensor_transpose(
-                other_tensor, dims, get_tensor_environ(inputs[0]));
-            Tensor *args[2] = {grad_tensor, other_tensor_T};
-
-            t = tensor_matmul(args[i], args[1 - i]);
-            t = broadcast_tensor_grad(t, ndim, shape);
-        } else {
-            ndArray *other_arr = get_tensor_data(outputs[num_outputs - i - 1]);
-            ndArray *data = copy_array(grad);
-
-            ndArray *other_arr_T = transpose(other_arr, dims);
-
-            ndArray *tmp = data;
-            ndArray *args[2] = {tmp, other_arr_T};
-
-            data = matmul(args[i], args[1 - i]);
-            data = broadcast_grad_data(data, ndim, shape);
-
-            free_array(tmp);
-            free_array(other_arr_T);
-            t = tensor_init(data, false, get_tensor_environ(inputs[0]));
-        }
-        output_grads[i] = t;
-    }
-}
-
-void _sum_grad_fn(Tensor **output_grads, Tensor **inputs, Tensor **outputs,
-                  Tensor **input_grads, size_t num_inputs, size_t num_outputs,
-                  bool create_graph) {
-    if (num_inputs != 1 || num_outputs != 1)
-        RUNTIME_ERROR(INVALID_NUM_INPUTS_OUTPUTS,
-                      "Invalid number of inputs/outputs");
-
-    Tensor *t;
+    Environment *env = get_tensor_environ(tensor);
     if (create_graph) {
-        Tensor *grad_tensor = input_grads[0];
-        Environment *env = get_tensor_environ(outputs[0]);
-        t = tensor_mul(grad_tensor, ones_like(outputs[0], false, env));
+        Tensor *t1_T = tensor_transpose_env(t1, t1_dims, env),
+               *t2_T = tensor_transpose_env(t2, t2_dims, env);
+
+        Tensor *t1_grad = tensor_matmul(grad, t2_T);
+        Tensor *t2_grad = tensor_matmul(t1_T, grad);
+
+        output_grads[0] = broadcast_tensor_grad(t1_grad, t1_ndim, t1_shape);
+        output_grads[1] = broadcast_tensor_grad(t2_grad, t2_ndim, t2_shape);
     } else {
-        ndArray *grad = get_tensor_data(input_grads[0]);
+        ndArray *data1_T = transpose(get_tensor_data(t1), t1_dims),
+                *data2_T = transpose(get_tensor_data(t2), t2_dims);
 
-        int ndim = get_tensor_ndim(outputs[0]);
-        const size_t *shape = get_tensor_shape(outputs[0]);
-        DType dtype = get_tensor_dtype(outputs[0]);
+        ndArray *data1_grad = matmul(get_tensor_data(grad), data2_T),
+                *data2_grad = matmul(data1_T, get_tensor_data(grad));
 
-        ndArray *ones_array = ones(ndim, shape, dtype);
-        ndArray *data = array_mul(grad, ones_array);
-        t = tensor_init(data, false, get_tensor_environ(inputs[0]));
-        free_array(ones_array);
+        data1_grad = broadcast_grad_data(data1_grad, t1_ndim, t1_shape);
+        data2_grad = broadcast_grad_data(data2_grad, t2_ndim, t2_shape);
+
+        output_grads[0] = tensor_init(data1_grad, NO_GRAD, env);
+        output_grads[1] = tensor_init(data2_grad, NO_GRAD, env);
+
+        free_array(data1_T);
+        free_array(data2_T);
     }
-    output_grads[0] = t;
-}
+})
 
-void _max_grad_fn(Tensor **output_grads, Tensor **inputs, Tensor **outputs,
-                  Tensor **input_grads, size_t num_inputs, size_t num_outputs,
-                  bool create_graph) {
-    if (num_inputs != 1 || num_outputs != 2)
-        RUNTIME_ERROR(INVALID_NUM_INPUTS_OUTPUTS,
-                      "Invalid number of inputs/outputs");
+_DEFINE_GRAD_FN(_sum_grad_fn, 1, 1, {
+    Tensor *new_tensor = inputs[0], *grad = input_grads[0];
+    Tensor *tensor = outputs[0];
 
-    ndArray *grad = get_tensor_data(input_grads[0]);
-    Tensor *grad_tensor = input_grads[0];
+    Environment *env = get_tensor_environ(new_tensor);
+    if (create_graph) {
+        output_grads[0] = tensor_mul(grad, ones_like(tensor, NO_GRAD, env));
+    } else {
+        int ndim = get_tensor_ndim(tensor);
+        const size_t *shape = get_tensor_shape(tensor);
+        DType dtype = get_tensor_dtype(tensor);
 
-    for (size_t i = 0; i < num_outputs; i++) {
-        int ndim = get_tensor_ndim(outputs[i]);
-        const size_t *shape = get_tensor_shape(outputs[i]);
+        ndArray *ones_arr = ones(ndim, shape, dtype);
 
-        Tensor *t;
-        if (create_graph) {
-            Tensor *tensor = outputs[i];
-            Tensor *other_tensor = outputs[num_outputs - i - 1];
+        ndArray *data_grad = array_mul(get_tensor_data(grad), ones_arr);
+        output_grads[0] = tensor_init(data_grad, NO_GRAD, env);
 
-            t = tensor_gt(tensor, other_tensor);
-            t = tensor_mul(grad_tensor, t);
-            t = broadcast_tensor_grad(t, ndim, shape);
-        } else {
-            ndArray *arr = get_tensor_data(outputs[i]);
-            ndArray *other_arr = get_tensor_data(outputs[num_outputs - i - 1]);
-
-            ndArray *data = array_gt(arr, other_arr);
-            array_muli(&data, grad);
-
-            data = broadcast_grad_data(data, ndim, shape);
-            t = tensor_init(data, false, get_tensor_environ(inputs[0]));
-        }
-        output_grads[i] = t;
+        free_array(ones_arr);
     }
-}
+})
 
-void _min_grad_fn(Tensor **output_grads, Tensor **inputs, Tensor **outputs,
-                  Tensor **input_grads, size_t num_inputs, size_t num_outputs,
-                  bool create_graph) {
-    if (num_inputs != 1 || num_outputs != 2)
-        RUNTIME_ERROR(INVALID_NUM_INPUTS_OUTPUTS,
-                      "Invalid number of inputs/outputs");
+_DEFINE_GRAD_FN(_max_grad_fn, 1, 2, {
+    Tensor *tensor = inputs[0], *grad = input_grads[0];
+    Tensor *t1 = outputs[0], *t2 = outputs[1];
+    size_t t1_ndim = get_tensor_ndim(t1), t2_ndim = get_tensor_ndim(t2);
+    const size_t *t1_shape = get_tensor_shape(t1),
+                 *t2_shape = get_tensor_shape(t2);
 
-    ndArray *grad = get_tensor_data(input_grads[0]);
-    Tensor *grad_tensor = input_grads[0];
+    Environment *env = get_tensor_environ(tensor);
+    if (create_graph) {
+        Tensor *t1_ge_t2 = tensor_ge(t1, t2), *t2_gt_t1 = tensor_gt(t2, t1);
 
-    for (size_t i = 0; i < num_outputs; i++) {
-        int ndim = get_tensor_ndim(outputs[i]);
-        const size_t *shape = get_tensor_shape(outputs[i]);
+        Tensor *t1_grad = tensor_mul(grad, t1_ge_t2);
+        Tensor *t2_grad = tensor_mul(grad, t2_gt_t1);
 
-        Tensor *t;
-        if (create_graph) {
-            Tensor *tensor = outputs[i];
-            Tensor *other_tensor = outputs[num_outputs - i - 1];
+        output_grads[0] = broadcast_tensor_grad(t1_grad, t1_ndim, t1_shape);
+        output_grads[1] = broadcast_tensor_grad(t2_grad, t2_ndim, t2_shape);
+    } else {
+        ndArray *data1 = get_tensor_data(t1), *data2 = get_tensor_data(t2);
+        ndArray *data1_ge_data2 = array_ge(data1, data2),
+                *data2_gt_data1 = array_gt(data2, data1);
 
-            t = tensor_lt(tensor, other_tensor);
-            t = tensor_mul(grad_tensor, t);
-            t = broadcast_tensor_grad(t, ndim, shape);
-        } else {
-            ndArray *arr = get_tensor_data(outputs[i]);
-            ndArray *other_arr = get_tensor_data(outputs[num_outputs - i - 1]);
+        ndArray *data1_grad = array_mul(get_tensor_data(grad), data1_ge_data2),
+                *data2_grad = array_mul(get_tensor_data(grad), data2_gt_data1);
 
-            ndArray *data = array_lt(arr, other_arr);
-            array_muli(&data, grad);
+        data1_grad = broadcast_grad_data(data1_grad, t1_ndim, t1_shape);
+        data2_grad = broadcast_grad_data(data2_grad, t2_ndim, t2_shape);
 
-            data = broadcast_grad_data(data, ndim, shape);
-            t = tensor_init(data, false, get_tensor_environ(inputs[0]));
-        }
-        output_grads[i] = t;
+        output_grads[0] = tensor_init(data1_grad, NO_GRAD, env);
+        output_grads[1] = tensor_init(data2_grad, NO_GRAD, env);
+
+        free_array(data1_ge_data2);
+        free_array(data2_gt_data1);
     }
-}
+})
+
+_DEFINE_GRAD_FN(_min_grad_fn, 1, 2, {
+    Tensor *tensor = inputs[0], *grad = input_grads[0];
+    Tensor *t1 = outputs[0], *t2 = outputs[1];
+    size_t t1_ndim = get_tensor_ndim(t1), t2_ndim = get_tensor_ndim(t2);
+    const size_t *t1_shape = get_tensor_shape(t1),
+                 *t2_shape = get_tensor_shape(t2);
+
+    Environment *env = get_tensor_environ(tensor);
+    if (create_graph) {
+        Tensor *t1_le_t2 = tensor_le(t1, t2), *t2_lt_t1 = tensor_lt(t2, t1);
+
+        Tensor *t1_grad = tensor_mul(grad, t1_le_t2);
+        Tensor *t2_grad = tensor_mul(grad, t2_lt_t1);
+
+        output_grads[0] = broadcast_tensor_grad(t1_grad, t1_ndim, t1_shape);
+        output_grads[1] = broadcast_tensor_grad(t2_grad, t2_ndim, t2_shape);
+    } else {
+        ndArray *data1 = get_tensor_data(t1), *data2 = get_tensor_data(t2);
+        ndArray *data1_le_data2 = array_le(data1, data2),
+                *data2_lt_data1 = array_lt(data2, data1);
+
+        ndArray *data1_grad = array_mul(get_tensor_data(grad), data1_le_data2),
+                *data2_grad = array_mul(get_tensor_data(grad), data2_lt_data1);
+
+        data1_grad = broadcast_grad_data(data1_grad, t1_ndim, t1_shape);
+        data2_grad = broadcast_grad_data(data2_grad, t2_ndim, t2_shape);
+
+        output_grads[0] = tensor_init(data1_grad, NO_GRAD, env);
+        output_grads[1] = tensor_init(data2_grad, NO_GRAD, env);
+
+        free_array(data1_le_data2);
+        free_array(data2_lt_data1);
+    }
+})
