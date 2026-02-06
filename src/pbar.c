@@ -13,6 +13,7 @@
 
 struct ProgressBar {
     int total;
+    int digits;
     int width;
     time_t start_time;
 };
@@ -31,6 +32,15 @@ static int _get_terminal_width() {
 #endif /* ifdef _WIN32 */
 }
 
+int num_digits(int num) {
+    int digits = 0;
+    while (num > 0) {
+        digits++;
+        num /= 10;
+    }
+    return digits;
+}
+
 ProgressBar *progress_init(int total) {
     ProgressBar *bar = malloc(sizeof(ProgressBar));
     if (!bar) {
@@ -39,6 +49,7 @@ ProgressBar *progress_init(int total) {
     }
 
     bar->total = total;
+    bar->digits = num_digits(total);
     bar->width = _get_terminal_width();
     bar->start_time = time(NULL);
 
@@ -60,7 +71,7 @@ void progress_update(const ProgressBar *bar, int current, const char *desc,
     float ratio = (float)current / bar->total;
     int percent = (int)(ratio * 100);
 
-    int bar_width = bar->width - 60;
+    int bar_width = bar->width - 85;
     if (bar_width < 10)
         bar_width = 10;
 
@@ -75,10 +86,15 @@ void progress_update(const ProgressBar *bar, int current, const char *desc,
         eta = (int)((double)elapsed / current * (bar->total - current));
     }
 
+    double speed = 0.0;
+    if (elapsed > 0) {
+        speed = (double)current / elapsed;
+    }
+
     char eta_str[16];
     _format_time(eta, eta_str, sizeof(eta_str));
 
-    printf("\r");
+    printf("\r\033[K");
 
     printf("%s%s%s ", COLOR_GREEN, desc, COLOR_RESET);
 
@@ -89,8 +105,10 @@ void progress_update(const ProgressBar *bar, int current, const char *desc,
         else
             printf("░");
     }
-    printf("|%s %3d%% ", COLOR_RESET, percent);
-    printf("|%s %sETA: %s%s", COLOR_RESET, COLOR_YELLOW, eta_str, COLOR_RESET);
+    printf("|%s [%*d/%d] %3d%% ", COLOR_RESET, bar->digits, current, bar->total,
+           percent);
+    printf("|%s %sETA: %s (%.2f it/s) %s", COLOR_RESET, COLOR_YELLOW, eta_str,
+           speed, COLOR_RESET);
     printf(" %s| %s%s", COLOR_GRAY, postfix, COLOR_RESET);
 
     fflush(stdout);
