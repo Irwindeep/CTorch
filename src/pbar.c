@@ -82,12 +82,9 @@ void progress_update(const ProgressBar *bar, int current, const char *desc,
     int elapsed = (int)difftime(now, bar->start_time);
 
     int eta = 0;
+    double speed = 0.0;
     if (current > 0 && elapsed > 0) {
         eta = (int)((double)elapsed / current * (bar->total - current));
-    }
-
-    double speed = 0.0;
-    if (elapsed > 0) {
         speed = (double)current / elapsed;
     }
 
