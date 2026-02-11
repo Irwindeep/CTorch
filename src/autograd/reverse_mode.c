@@ -138,7 +138,7 @@ void backward(Tensor *tensor, Tensor *grad) {
     BackwardFn *backward_fn = get_backward_fn(tensor);
     _backward((Tensor *[]){tensor}, (Tensor *[]){grad}, backward_fn);
 
-    const Environment *environ = get_tensor_environ(grad);
-    if (!environ)
+    const Environment *env = get_tensor_environ(grad);
+    if (!env)
         free_tensor(grad);
 }

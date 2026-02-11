@@ -16,27 +16,27 @@ typedef struct Tensor Tensor;
 typedef struct BackwardFn BackwardFn;
 
 Environment *env_init();
-void free_env(Environment *environ);
+void free_env(Environment *env);
 
-void env_push(Environment *environ, Tensor *tensor);
-Tensor *env_pop(Environment *environ);
-bool env_remove_and_free(Environment *environ, const Tensor *target);
+void env_push(Environment *env, Tensor *tensor);
+Tensor *env_pop(Environment *env);
+bool env_remove_and_free(Environment *env, const Tensor *target);
 
-Tensor **get_tensors(const Environment *environ);
-size_t get_num_tensors(const Environment *environ);
+Tensor **get_tensors(const Environment *env);
+size_t get_num_tensors(const Environment *env);
 
-bool get_lock(const Environment *environ);
+bool get_lock(const Environment *env);
 
-void set_lock(Environment *environ);
-void open_lock(Environment *environ);
+void set_lock(Environment *env);
+void open_lock(Environment *env);
 
 Environment *resolve_environ(Tensor *t1, Tensor *t2);
 
-Tensor *tensor_init(ndArray *data, bool requires_grad, Environment *environ);
+Tensor *tensor_init(ndArray *data, bool requires_grad, Environment *env);
 void free_tensor(Tensor *tensor);
 
 void save_tensor(Tensor *tensor, const char *path);
-Tensor *load_tensor(const char *path, bool requires_grad, Environment *environ);
+Tensor *load_tensor(const char *path, bool requires_grad, Environment *env);
 
 ndArray *get_tensor_data(const Tensor *tensor);
 Tensor *get_tensor_grad(const Tensor *tensor);
@@ -58,15 +58,15 @@ void set_backward_fn(Tensor *tensor, BackwardFn *backward_fn);
 void zero_grad(Tensor *tensor);
 
 Tensor *eye_tensor(size_t m, size_t n, DType dtype, bool requires_grad,
-                   Environment *environ);
+                   Environment *env);
 Tensor *zeros_tensor(int ndim, const size_t *shape, DType dtype,
-                     bool requires_grad, Environment *environ);
+                     bool requires_grad, Environment *env);
 Tensor *ones_tensor(int ndim, const size_t *shape, DType dtype,
-                    bool requires_grad, Environment *environ);
+                    bool requires_grad, Environment *env);
 Tensor *zeros_like(const Tensor *tensor, bool requires_grad, Environment *env);
 Tensor *ones_like(const Tensor *tensor, bool requires_grad, Environment *env);
 Tensor *scalar(ArrayVal value, DType dtype, bool requires_grad,
-               Environment *environ);
+               Environment *env);
 ArrayVal item(const Tensor *tensor);
 
 Tensor *tensor_sum(Tensor *tensor);

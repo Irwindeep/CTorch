@@ -19,69 +19,69 @@ struct Environment {
 };
 
 Environment *env_init() {
-    Environment *environ = malloc(sizeof(Environment));
-    if (!environ)
+    Environment *env = malloc(sizeof(Environment));
+    if (!env)
         RUNTIME_ERROR(ENV_INIT_FAILURE, "Failure to create environment");
 
-    environ->capacity = 1;
-    environ->tensors = malloc(environ->capacity * sizeof(Tensor *));
-    environ->num_tensors = 0;
-    environ->lock = false;
+    env->capacity = 1;
+    env->tensors = malloc(env->capacity * sizeof(Tensor *));
+    env->num_tensors = 0;
+    env->lock = false;
 
-    return environ;
+    return env;
 }
 
-void free_env(Environment *environ) {
-    if (!environ)
+void free_env(Environment *env) {
+    if (!env)
         return;
 
-    for (size_t i = 0; i < environ->num_tensors; i++)
-        free_tensor(environ->tensors[i]);
-    free(environ->tensors);
-    free(environ);
+    for (size_t i = 0; i < env->num_tensors; i++)
+        free_tensor(env->tensors[i]);
+    free(env->tensors);
+    free(env);
 }
 
-void env_push(Environment *environ, Tensor *tensor) {
-    if (environ->lock)
+void env_push(Environment *env, Tensor *tensor) {
+    if (env->lock)
         RUNTIME_ERROR(INVALID_ARRAY, "Invalid access to locked environment");
 
-    if (environ->num_tensors == environ->capacity) {
-        size_t new_capacity = 2 * environ->capacity;
+    if (env->num_tensors == env->capacity) {
+        size_t new_capacity = 2 * env->capacity;
         Tensor **new_tensors =
-            realloc(environ->tensors, new_capacity * sizeof(Tensor *));
+            realloc(env->tensors, new_capacity * sizeof(Tensor *));
         if (!new_tensors)
             RUNTIME_ERROR(ENV_PUSH_FAILURE, "Memory Re-allocation failure");
 
-        environ->tensors = new_tensors;
-        environ->capacity = new_capacity;
+        env->tensors = new_tensors;
+        env->capacity = new_capacity;
     }
 
-    environ->tensors[environ->num_tensors++] = tensor;
+    env->tensors[env->num_tensors++] = tensor;
 }
 
-Tensor *env_pop(Environment *environ) {
-    if (environ->num_tensors == 0) {
+Tensor *env_pop(Environment *env) {
+    if (env->num_tensors == 0) {
         printf("No Tensors in the environment, invalid pop\n");
         return NULL;
     }
 
-    Tensor *tensor = environ->tensors[--environ->num_tensors];
+    Tensor *tensor = env->tensors[--env->num_tensors];
     return tensor;
 }
 
-bool env_remove_and_free(Environment *environ, const Tensor *target) {
-    if (!environ || !target)
+bool env_remove_and_free(Environment *env, const Tensor *target) {
+    if (!env || !target)
         return false;
 
-    for (size_t i = 0; i < environ->num_tensors; i++) {
-        if (environ->tensors[i] == target) {
-            free_tensor(environ->tensors[i]);
+    for (size_t i = 0; i < env->num_tensors; i++) {
+        if (env->tensors[i] == target) {
+            free_tensor(env->tensors[i]);
 
-            for (size_t j = i + 1; j < environ->num_tensors; j++) {
-                environ->tensors[j - 1] = environ->tensors[j];
+            for (size_t j = i + 1; j < env->num_tensors; j++) {
+                env->tensors[j - 1] = env->tensors[j];
             }
 
-            environ->num_tensors--;
+            env->num_tensors--;
             return true;
         }
     }
@@ -89,15 +89,13 @@ bool env_remove_and_free(Environment *environ, const Tensor *target) {
     return false;
 }
 
-Tensor **get_tensors(const Environment *environ) { return environ->tensors; }
-size_t get_num_tensors(const Environment *environ) {
-    return environ->num_tensors;
-}
+Tensor **get_tensors(const Environment *env) { return env->tensors; }
+size_t get_num_tensors(const Environment *env) { return env->num_tensors; }
 
-bool get_lock(const Environment *environ) { return environ->lock; }
+bool get_lock(const Environment *env) { return env->lock; }
 
-void set_lock(Environment *environ) { environ->lock = true; }
-void open_lock(Environment *environ) { environ->lock = false; }
+void set_lock(Environment *env) { env->lock = true; }
+void open_lock(Environment *env) { env->lock = false; }
 
 Environment *resolve_environ(Tensor *t1, Tensor *t2) {
     Environment *env1 = get_tensor_environ(t1), *env2 = get_tensor_environ(t2);

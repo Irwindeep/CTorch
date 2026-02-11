@@ -35,7 +35,7 @@ void unfreeze(Module *module) {
 void module_init(Module *module) {
     module->modules = NULL;
     module->num_modules = 0;
-    module->environ = env_init();
+    module->env = env_init();
     module->forward = NULL;
 
     module->repr = NULL;
@@ -65,10 +65,10 @@ size_t num_parameters(Module *module) {
 }
 
 static void _parameters(Module *module, Tensor **out, size_t *count) {
-    Environment *env = module->environ;
+    Environment *env = module->env;
     if (env) {
         size_t num_tensors = get_num_tensors(env);
-        Tensor **env_tensors = get_tensors(module->environ);
+        Tensor **env_tensors = get_tensors(module->env);
 
         for (size_t i = 0; i < num_tensors; i++)
             out[(*count)++] = env_tensors[i];
@@ -118,7 +118,7 @@ size_t num_non_trainable_variables(Module *module) {
     return num_non_trainable_vars;
 }
 
-Environment *get_environ(const Module *module) { return module->environ; }
+Environment *get_environ(const Module *module) { return module->env; }
 CallableModule get_callable(const Module *module) { return module->forward; }
 
 void free_module(Module *module) {
@@ -128,7 +128,7 @@ void free_module(Module *module) {
     if (module->num_modules > 0)
         free(module->modules);
 
-    free_env(module->environ);
+    free_env(module->env);
     if (module->repr && module->repr_dynamic)
         free((void *)module->repr);
     free(module);

@@ -12,7 +12,7 @@ struct Module {
     Module **modules;
     size_t num_modules;
 
-    Environment *environ;
+    Environment *env;
     CallableModule forward;
 
     const char *repr;

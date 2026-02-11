@@ -16,10 +16,10 @@ uint64_t rng_rand(PRNG *rng);
 void free_rng(PRNG *rng);
 
 Tensor *uniform(int ndim, const size_t *shape, float bound, DType dtype,
-                bool requires_grad, Environment *environ);
+                bool requires_grad, Environment *env);
 Tensor *randn(int ndim, const size_t *shape, DType dtype, bool requires_grad,
-              Environment *environ);
+              Environment *env);
 Tensor *randint(int ndim, const size_t *shape, long int low, long int high,
-                DType dtype, Environment *environ);
+                DType dtype, Environment *env);
 
 #endif // !RANDOM_H
