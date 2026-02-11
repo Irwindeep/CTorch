@@ -6,6 +6,19 @@
 
 #ifdef _WIN32
 #include <windows.h>
+
+static void _enable_virtual_terminal() {
+    HANDLE h_out = GetStdHandle(STD_OUTPUT_HANDLE);
+    if (h_out == INVALID_HANDLE_VALUE)
+        return;
+
+    DWORD dw_mode = 0;
+    if (!GetConsoleMode(h_out, &dw_mode))
+        return;
+
+    dw_mode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
+    SetConsoleMode(h_out, dw_mode)
+}
 #else
 #include <sys/ioctl.h>
 #include <unistd.h>
@@ -47,6 +60,11 @@ ProgressBar *progress_init(int total) {
         printf("Failure to create progress bar\n");
         exit(PBAR_INIT_FAILURE);
     }
+
+#ifdef _WIN32
+    SetConsoleOutputCP(CP_UTF8);
+    _enable_virtual_terminal();
+#endif /* ifdef _WIN32 */
 
     bar->total = total;
     bar->digits = num_digits(total);
