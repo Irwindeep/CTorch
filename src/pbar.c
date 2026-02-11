@@ -17,7 +17,7 @@ static void _enable_virtual_terminal() {
         return;
 
     dw_mode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
-    SetConsoleMode(h_out, dw_mode)
+    SetConsoleMode(h_out, dw_mode);
 }
 #else
 #include <sys/ioctl.h>
