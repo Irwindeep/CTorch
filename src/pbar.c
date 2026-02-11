@@ -2,6 +2,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <time.h>
 
 #ifdef _WIN32
@@ -28,6 +29,7 @@ struct ProgressBar {
     int total;
     int digits;
     int width;
+    int tick;
     time_t start_time;
 };
 
@@ -69,6 +71,7 @@ ProgressBar *progress_init(int total) {
     bar->total = total;
     bar->digits = num_digits(total);
     bar->width = _get_terminal_width();
+    bar->tick = 0;
     bar->start_time = time(NULL);
 
     return bar;
@@ -81,50 +84,106 @@ static void _format_time(int seconds, char *out, size_t size) {
     snprintf(out, size, "%02d:%02d:%02d", h, m, s);
 }
 
-void progress_update(const ProgressBar *bar, int current, const char *desc,
+static int visible_len(const char *s) {
+    int len = 0;
+    while (*s) {
+        if (*s == '\033') {
+            while (*s && *s != 'm')
+                s++;
+            if (*s)
+                s++;
+        } else {
+            len++;
+            s++;
+        }
+    }
+    return len;
+}
+
+void progress_update(ProgressBar *bar, int current, const char *desc,
                      const char *postfix) {
+
     if (current > bar->total)
         current = bar->total;
 
+    int term_width = bar->width;
     float ratio = (float)current / bar->total;
-    int percent = (int)(ratio * 100);
+    int percent = (int)(ratio * 100.0f);
 
-    int bar_width = bar->width - 85;
-    if (bar_width < 10)
-        bar_width = 10;
-
-    int filled = (int)(ratio * bar_width);
-
-    /* Time calculations */
     time_t now = time(NULL);
     int elapsed = (int)difftime(now, bar->start_time);
 
-    int eta = 0;
     double speed = 0.0;
+    int eta = 0;
+
     if (current > 0 && elapsed > 0) {
-        eta = (int)((double)elapsed / current * (bar->total - current));
         speed = (double)current / elapsed;
+        eta = (int)((bar->total - current) / speed);
     }
 
     char eta_str[16];
     _format_time(eta, eta_str, sizeof(eta_str));
 
+    char left[256];
+    snprintf(left, sizeof(left), "%s%s%s | %s%s%s", COLOR_GREEN, desc,
+             COLOR_RESET, COLOR_GRAY, postfix, COLOR_RESET);
+
+    char right[256];
+    snprintf(right, sizeof(right), "[%*d/%d] %.2f it/s %s%s%s ", bar->digits,
+             current, bar->total, speed, COLOR_YELLOW, eta_str, COLOR_RESET);
+
+    int left_len = visible_len(left);
+    int right_len = visible_len(right);
+
+    int spacing = 4;
+    int percent_len = 4;
+    int fixed_chars = 4;
+
+    int bar_width =
+        term_width - left_len - right_len - percent_len - fixed_chars - 1;
+    if (bar_width < 10)
+        bar_width = 10;
+    if (bar_width > 60)
+        bar_width = 60;
+
     printf("\r\033[K");
 
-    printf("%s%s%s ", COLOR_GREEN, desc, COLOR_RESET);
+    printf("%s", left);
 
-    printf("%s|", COLOR_BLUE);
-    for (int i = 0; i < bar_width; i++) {
-        if (i < filled)
-            printf("█");
-        else
-            printf("░");
+    int used_without_padding =
+        left_len + right_len + percent_len + fixed_chars + bar_width;
+
+    int padding = term_width - used_without_padding;
+
+    if (padding < 1)
+        padding = 1;
+
+    printf("%*s", padding, "");
+
+    printf("%s", right);
+    printf("%s[", COLOR_BLUE);
+
+    int pos = (int)(ratio * (bar_width - 1));
+
+    if (current == bar->total) {
+        for (int i = 0; i < bar_width; i++)
+            printf("-");
+    } else {
+        for (int i = 0; i < bar_width; i++) {
+            if (i < pos)
+                printf("-");
+            else if (i == pos) {
+                printf(bar->tick % 2 == 0 ? "C" : "c");
+                bar->tick++;
+            } else if (i % 2 == 0)
+                printf("o");
+            else
+                printf(" ");
+        }
     }
-    printf("|%s [%*d/%d] %3d%% ", COLOR_RESET, bar->digits, current, bar->total,
-           percent);
-    printf("|%s %sETA: %s (%.2f it/s) %s", COLOR_RESET, COLOR_YELLOW, eta_str,
-           speed, COLOR_RESET);
-    printf(" %s| %s%s", COLOR_GRAY, postfix, COLOR_RESET);
+
+    printf("]%s", COLOR_RESET);
+    printf(" %3d%%", percent);
 
     fflush(stdout);
 }
