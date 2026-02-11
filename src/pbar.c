@@ -106,7 +106,7 @@ void progress_update(ProgressBar *bar, int current, const char *desc,
     if (current > bar->total)
         current = bar->total;
 
-    int term_width = bar->width;
+    int term_width = _get_terminal_width();
     float ratio = (float)current / bar->total;
     int percent = (int)(ratio * 100.0f);
 
