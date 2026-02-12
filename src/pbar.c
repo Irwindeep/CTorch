@@ -29,7 +29,6 @@ struct ProgressBar {
     int total;
     int digits;
     int width;
-    int tick;
     time_t start_time;
 };
 
@@ -71,7 +70,6 @@ ProgressBar *progress_init(int total) {
     bar->total = total;
     bar->digits = num_digits(total);
     bar->width = _get_terminal_width();
-    bar->tick = 0;
     bar->start_time = time(NULL);
 
     return bar;
@@ -173,8 +171,7 @@ void progress_update(ProgressBar *bar, int current, const char *desc,
             if (i < pos)
                 printf("-");
             else if (i == pos) {
-                printf(bar->tick % 2 == 0 ? "C" : "c");
-                bar->tick++;
+                printf(i % 2 == 0 ? "C" : "c");
             } else if (i % 2 == 0)
                 printf("o");
             else
