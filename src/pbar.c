@@ -29,7 +29,7 @@ struct ProgressBar {
     int total;
     int digits;
     int width;
-    time_t start_time;
+    clock_t start_time;
 };
 
 static int _get_terminal_width() {
@@ -70,7 +70,7 @@ ProgressBar *progress_init(int total) {
     bar->total = total;
     bar->digits = num_digits(total);
     bar->width = _get_terminal_width();
-    bar->start_time = time(NULL);
+    bar->start_time = clock();
 
     return bar;
 }
@@ -100,7 +100,6 @@ static int visible_len(const char *s) {
 
 void progress_update(ProgressBar *bar, int current, const char *desc,
                      const char *postfix) {
-
     if (current > bar->total)
         current = bar->total;
 
@@ -108,8 +107,8 @@ void progress_update(ProgressBar *bar, int current, const char *desc,
     float ratio = (float)current / bar->total;
     int percent = (int)(ratio * 100.0f);
 
-    time_t now = time(NULL);
-    int elapsed = (int)difftime(now, bar->start_time);
+    clock_t now = clock();
+    double elapsed = (double)(now - bar->start_time) / CLOCKS_PER_SEC;
 
     double speed = 0.0;
     int eta = 0;

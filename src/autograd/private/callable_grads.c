@@ -40,15 +40,7 @@ _DEFINE_GRAD_FN(_accumulate_grad_fn, 1, 0, {
     ndArray *sum =
         array_add(get_tensor_data(tensor_grad), get_tensor_data(grad));
 
-    bool is_locked = false;
-    if (get_lock(env)) {
-        open_lock(env);
-        is_locked = true;
-    }
-    set_tensor_grad(tensor, tensor_init(sum, NO_GRAD, env));
-
-    if (is_locked)
-        set_lock(env);
+    replace_tensor_data(tensor_grad, sum);
 })
 
 _DEFINE_GRAD_FN(_add_grad_fn, 1, 2, {

@@ -1,83 +1,11 @@
 #include "array.h"
 #include "error_codes.h"
+#include "kernel/ops.h"
 
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-#define _MATMUL_KERNEL(T, NAME)                                                \
-    static void NAME(const T *A, const T *B, T *C, size_t m, size_t n,         \
-                     size_t k, size_t sAr, size_t sAc, size_t sBr, size_t sBc, \
-                     size_t sCr, size_t sCc) {                                 \
-        _Pragma("omp parallel for schedule(static)") for (size_t i = 0; i < m; \
-                                                          i++) {               \
-            for (size_t j = 0; j < n; j++) {                                   \
-                T sum = (T)0;                                                  \
-                for (size_t p = 0; p < k; p++) {                               \
-                    sum += A[i * sAr + p * sAc] * B[p * sBr + j * sBc];        \
-                }                                                              \
-                C[i * sCr + j * sCc] = sum;                                    \
-            }                                                                  \
-        }                                                                      \
-    }
-
-_MATMUL_KERNEL(int, _matmul_i)
-_MATMUL_KERNEL(float, _matmul_f)
-_MATMUL_KERNEL(double, _matmul_d)
-_MATMUL_KERNEL(long int, _matmul_l)
-
-static void _matmul(ndArray *arr1, ndArray *arr2, ndArray *result,
-                    const size_t *idx1, const size_t *idx2, const size_t *idx) {
-    size_t m = get_shape(result)[get_ndim(result) - 2],
-           n = get_shape(result)[get_ndim(result) - 1],
-           k = get_shape(arr1)[get_ndim(arr1) - 1];
-
-    DType dtype = get_dtype(result);
-    int ndim1 = get_ndim(arr1), ndim2 = get_ndim(arr2), ndim = get_ndim(result);
-
-    size_t sAr = get_strides(arr1)[ndim1 - 2] / get_itemsize(arr1),
-           sAc = get_strides(arr1)[ndim1 - 1] / get_itemsize(arr1);
-    size_t sBr = get_strides(arr2)[ndim2 - 2] / get_itemsize(arr2),
-           sBc = get_strides(arr2)[ndim2 - 1] / get_itemsize(arr2);
-    size_t sCr = get_strides(result)[ndim - 2] / get_itemsize(result),
-           sCc = get_strides(result)[ndim - 1] / get_itemsize(result);
-
-    size_t offsetA = index_to_offset(idx1, get_strides(arr1), ndim1 - 2),
-           offsetB = index_to_offset(idx2, get_strides(arr2), ndim2 - 2),
-           offsetC = index_to_offset(idx, get_strides(result), ndim - 2);
-
-    switch (dtype) {
-    case DTYPE_INT: {
-        const int *A = (int *)(get_array_data(arr1) + offsetA),
-                  *B = (int *)(get_array_data(arr2) + offsetB);
-        int *C = (int *)(get_array_data(result) + offsetC);
-        _matmul_i(A, B, C, m, n, k, sAr, sAc, sBr, sBc, sCr, sCc);
-        break;
-    }
-    case DTYPE_FLOAT: {
-        const float *A = (float *)(get_array_data(arr1) + offsetA),
-                    *B = (float *)(get_array_data(arr2) + offsetB);
-        float *C = (float *)(get_array_data(result) + offsetC);
-        _matmul_f(A, B, C, m, n, k, sAr, sAc, sBr, sBc, sCr, sCc);
-        break;
-    }
-    case DTYPE_DOUBLE: {
-        const double *A = (double *)get_array_data(arr1) + offsetA,
-                     *B = (double *)get_array_data(arr2) + offsetB;
-        double *C = (double *)get_array_data(result) + offsetC;
-        _matmul_d(A, B, C, m, n, k, sAr, sAc, sBr, sBc, sCr, sCc);
-        break;
-    }
-    case DTYPE_LONG: {
-        const long int *A = (long int *)get_array_data(arr1) + offsetA,
-                       *B = (long int *)get_array_data(arr2) + offsetB;
-        long int *C = (long int *)get_array_data(result) + offsetC;
-        _matmul_l(A, B, C, m, n, k, sAr, sAc, sBr, sBc, sCr, sCc);
-        break;
-    }
-    }
-}
 
 static void _batch_matmul(ndArray *arr1, ndArray *arr2, ndArray *result) {
     int ndim1 = get_ndim(arr1), ndim2 = get_ndim(arr2), ndim = get_ndim(result);
@@ -93,7 +21,7 @@ static void _batch_matmul(ndArray *arr1, ndArray *arr2, ndArray *result) {
         get_broadcasted_indices(get_shape(arr1), get_shape(arr2),
                                 get_shape(result), batch_ndim1, batch_ndim2,
                                 batch_ndim, idx1, idx2, idx, b);
-        _matmul(arr1, arr2, result, idx1, idx2, idx);
+        matmul_kernel(arr1, arr2, result, idx1, idx2, idx);
     }
 }
 
@@ -111,6 +39,12 @@ ndArray *matmul(ndArray *arr1, ndArray *arr2) {
                        DTypeNames[dtype1], DTypeNames[dtype2]);
 
     dtype = dtype1;
+
+    if (dtype == DTYPE_INT || dtype == DTYPE_LONG)
+        RUNTIME_ERRORF(INVALID_DTYPE,
+                       "Cannot matmul arrays with dtype - `%s`, only "
+                       "DTYPE_FLOAT and DTYPE_DOUBLE are supported",
+                       DTypeNames[dtype]);
 
     size_t m = get_shape(arr1)[get_ndim(arr1) - 2],
            k1 = get_shape(arr1)[get_ndim(arr1) - 1],

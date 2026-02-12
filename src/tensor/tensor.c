@@ -164,7 +164,7 @@ void set_requires_grad(Tensor *tensor, bool requires_grad) {
     tensor->requires_grad = requires_grad;
 }
 
-void set_tensor_data(Tensor *tensor, ndArray *data) {
+void replace_tensor_data(Tensor *tensor, ndArray *data) {
     if (tensor->data)
         free_array(tensor->data);
 
@@ -192,10 +192,8 @@ void zero_grad(Tensor *tensor) {
     DType dtype = get_dtype(tensor->data);
 
     if (tensor->grad) {
-        Environment *env = tensor->grad->env;
-        bool removed = env_remove_and_free(env, tensor->grad);
-        if (!removed)
-            RUNTIME_ERROR(INVALID_GRAD, "Gradient not found in envment");
+        replace_tensor_data(tensor->grad, zeros(ndim, shape, dtype));
+        return;
     }
 
     Environment *env = tensor->env;
