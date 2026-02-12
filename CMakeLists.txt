@@ -1,7 +1,8 @@
 cmake_minimum_required(VERSION 4.2.3)
-project(CTorch LANGUAGES C)
+project(CTorch LANGUAGES C Fortran)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+set(CMAKE_BUILD_TYPE Release)
 
 if(NOT DEFINED CMAKE_TOOLCHAIN_FILE)
   if(DEFINED ENV{VCPKG_ROOT})
@@ -21,6 +22,7 @@ set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 
 find_package(OpenMP REQUIRED)
+find_package(OpenBLAS REQUIRED)
 find_library(M_LIB m)
 
 file(GLOB_RECURSE CTORCH_SOURCES CONFIGURE_DEPENDS
@@ -33,10 +35,12 @@ target_include_directories(
   ctorch PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
                 $<INSTALL_INTERFACE:include>)
 
-target_link_libraries(ctorch PUBLIC OpenMP::OpenMP_C)
+target_link_libraries(ctorch PUBLIC OpenMP::OpenMP_C OpenBLAS::OpenBLAS)
 if(M_LIB)
   target_link_libraries(ctorch PUBLIC ${M_LIB})
 endif()
+
+target_compile_options(ctorch PRIVATE -O3 -march=native -ffast-math)
 
 if(BUILD_TESTING)
   add_subdirectory(tests)

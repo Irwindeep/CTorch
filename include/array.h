@@ -57,6 +57,7 @@ void offset_to_index(size_t offset, size_t *idx, const size_t *shape, int ndim);
 size_t index_to_offset(const size_t *idx, const size_t *strides, int ndim);
 
 ndArray *copy_array(const ndArray *array);
+bool is_array_contiguous(const ndArray *array);
 
 ndArray *eye(size_t m, size_t n, DType dtype);
 ndArray *zeros(int ndim, const size_t *shape, DType dtype);
