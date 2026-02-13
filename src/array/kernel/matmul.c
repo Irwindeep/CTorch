@@ -8,6 +8,7 @@
 
 static int num_threads = -1;
 
+/* TODO: use something better here for dynamic threads */
 static inline int decide_threads(int M, int N, int K) {
     long flops = 2L * M * N * K;
 
