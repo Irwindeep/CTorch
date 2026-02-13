@@ -29,7 +29,7 @@ struct ProgressBar {
     int total;
     int digits;
     int width;
-    clock_t start_time;
+    double start_time;
 };
 
 static int _get_terminal_width() {
@@ -44,6 +44,12 @@ static int _get_terminal_width() {
     ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
     return w.ws_col > 0 ? w.ws_col : 80;
 #endif /* ifdef _WIN32 */
+}
+
+static inline double now_sec(void) {
+    struct timespec ts;
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    return ts.tv_sec + ts.tv_nsec * 1e-9;
 }
 
 int num_digits(int num) {
@@ -70,7 +76,7 @@ ProgressBar *progress_init(int total) {
     bar->total = total;
     bar->digits = num_digits(total);
     bar->width = _get_terminal_width();
-    bar->start_time = clock();
+    bar->start_time = now_sec();
 
     return bar;
 }
@@ -107,8 +113,8 @@ void progress_update(ProgressBar *bar, int current, const char *desc,
     float ratio = (float)current / bar->total;
     int percent = (int)(ratio * 100.0f);
 
-    clock_t now = clock();
-    double elapsed = (double)(now - bar->start_time) / CLOCKS_PER_SEC;
+    double now = now_sec();
+    double elapsed = (now - bar->start_time);
 
     double speed = 0.0;
     int eta = 0;
@@ -170,7 +176,7 @@ void progress_update(ProgressBar *bar, int current, const char *desc,
             if (i < pos)
                 printf("-");
             else if (i == pos) {
-                printf(i % 2 == 0 ? "C" : "c");
+                printf(COLOR_YELLOW "%c" COLOR_BLUE, i % 2 == 0 ? 'C' : 'c');
             } else if (i % 2 == 0)
                 printf("o");
             else
