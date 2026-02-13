@@ -226,11 +226,11 @@ _ARRAY_CMP(float, _array_eq_f, ==)
 _ARRAY_CMP(double, _array_eq_d, ==)
 _ARRAY_CMP(long int, _array_eq_l, ==)
 
-DEFINE_DISPATCH_FUNC(gt, _array_max)
-DEFINE_DISPATCH_FUNC(ge, _array_min)
-DEFINE_DISPATCH_FUNC(lt, _array_max)
-DEFINE_DISPATCH_FUNC(le, _array_min)
-DEFINE_DISPATCH_FUNC(eq, _array_min)
+DEFINE_DISPATCH_FUNC(gt, _array_gt)
+DEFINE_DISPATCH_FUNC(ge, _array_ge)
+DEFINE_DISPATCH_FUNC(lt, _array_lt)
+DEFINE_DISPATCH_FUNC(le, _array_le)
+DEFINE_DISPATCH_FUNC(eq, _array_eq)
 
 ndArray *array_gt(ndArray *arr1, ndArray *arr2) {
     return array_binary_op(arr1, arr2, dispatch_gt);

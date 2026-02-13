@@ -3,9 +3,9 @@
 #include "error_codes.h"
 #include "tensor.h"
 
-#include <CUnit/TestRun.h>
 #include <stdbool.h>
 #include <stddef.h>
+#include <stdio.h>
 #include <stdlib.h>
 
 static inline ssize_t find_input(const Tensor *t, Tensor **inputs,

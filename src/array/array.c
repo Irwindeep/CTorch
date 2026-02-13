@@ -1,6 +1,7 @@
 #include "array.h"
 #include "error_codes.h"
 
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -181,6 +182,20 @@ ndArray *copy_array(const ndArray *array) {
     populate_array(new_arr, array->data);
 
     return new_arr;
+}
+
+bool is_array_contiguous(const ndArray *array) {
+    size_t expected = array->itemsize;
+    const size_t *strides = array->strides;
+    int ndim = array->ndim;
+
+    for (int d = ndim - 1; d >= 0; d--) {
+        if (strides[d] != expected)
+            return false;
+
+        expected *= array->shape[d];
+    }
+    return true;
 }
 
 // some important arrays
