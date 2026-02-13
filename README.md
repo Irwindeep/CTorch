@@ -58,8 +58,7 @@ print_tensor(get_tensor_grad(b));
   - [ ] Explicit optimizers for with/without momentum
 - [x] Autograd pipeline for higher order derivatives
 - [x] Parallelize with OpenMP
-- [ ] BLAS for matmul operations
-- [ ] SIMD for elementwise ops
+- [x] BLAS for matmul operations
 - [ ] Visualization Module
   - [ ] Line plots
   - [ ] Heatmaps
