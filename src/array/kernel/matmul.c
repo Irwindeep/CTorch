@@ -6,21 +6,6 @@
 #include <stddef.h>
 #include <stdlib.h>
 
-static int num_threads = -1;
-
-/* TODO: use something better here for dynamic threads */
-static inline int decide_threads(int M, int N, int K) {
-    long flops = 2L * M * N * K;
-
-    if (flops < 5e7)
-        return 1;
-    if (flops < 2e8)
-        return 2;
-    if (flops < 1e9)
-        return 4;
-    return 8;
-}
-
 static inline bool is_contig(size_t rows, size_t cols, size_t sR, size_t sC) {
     return (sR == cols && sC == 1);
 }
@@ -30,13 +15,6 @@ void matmul_kernel(const ndArray *arr1, const ndArray *arr2, ndArray *result,
     size_t m = get_shape(result)[get_ndim(result) - 2],
            n = get_shape(result)[get_ndim(result) - 1],
            k = get_shape(arr1)[get_ndim(arr1) - 1];
-
-    int threads = decide_threads(m, n, k);
-    if (threads != num_threads) {
-        omp_set_num_threads(threads);
-        openblas_set_num_threads(threads);
-        num_threads = threads;
-    }
 
     DType dtype = get_dtype(result);
     int ndim1 = get_ndim(arr1), ndim2 = get_ndim(arr2), ndim = get_ndim(result);
