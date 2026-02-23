@@ -3,7 +3,7 @@
 Example usage:
 
 ```c
-AutoEnvironment env = env_init();
+ScopedEnvironment env = env_init();
 
 Tensor *x = randn(SHAPE(1, 6), DTYPE_FLOAT, NO_GRAD, env);
 Tensor *W = randn(SHAPE(6, 1), DTYPE_FLOAT, REQUIRES_GRAD, env);
