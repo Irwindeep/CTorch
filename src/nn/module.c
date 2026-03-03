@@ -121,17 +121,22 @@ size_t num_non_trainable_variables(Module *module) {
 Environment *get_environ(const Module *module) { return module->env; }
 CallableModule get_callable(const Module *module) { return module->forward; }
 
-void free_module(Module *module) {
-    for (size_t i = 0; i < module->num_modules; i++)
-        free_module(module->modules[i]);
+void free_module(Module **module) {
+    if (!module || !*module)
+        return;
 
-    if (module->num_modules > 0)
-        free(module->modules);
+    for (size_t i = 0; i < (*module)->num_modules; i++)
+        free_module(&(*module)->modules[i]);
 
-    free_env(module->env);
-    if (module->repr && module->repr_dynamic)
-        free((void *)module->repr);
-    free(module);
+    if ((*module)->num_modules > 0)
+        free((*module)->modules);
+
+    free_env(&(*module)->env);
+    if ((*module)->repr && (*module)->repr_dynamic)
+        free((void *)(*module)->repr);
+    free(*module);
+
+    *module = NULL;
 }
 
 Tensor *module_call(Module *module, Tensor *input) {

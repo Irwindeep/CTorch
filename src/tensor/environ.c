@@ -31,14 +31,16 @@ Environment *env_init() {
     return env;
 }
 
-void free_env(Environment *env) {
-    if (!env)
+void free_env(Environment **env) {
+    if (!env || !*env)
         return;
 
-    for (size_t i = 0; i < env->num_tensors; i++)
-        free_tensor(env->tensors[i]);
-    free(env->tensors);
-    free(env);
+    for (size_t i = 0; i < (*env)->num_tensors; i++)
+        free_tensor((*env)->tensors[i]);
+    free((*env)->tensors);
+    free(*env);
+
+    *env = NULL;
 }
 
 void env_push(Environment *env, Tensor *tensor) {

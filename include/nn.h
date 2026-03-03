@@ -67,7 +67,7 @@ sequential *_Sequential(size_t num_modules, Module **modules);
         (sizeof((Module *[]){__VA_ARGS__}) / sizeof(Module *)),                \
         ((Module *[]){__VA_ARGS__}));
 
-void free_module(Module *module);
+void free_module(Module **module);
 
 #define ModuleInit(ptr, type, name)                                            \
     do {                                                                       \

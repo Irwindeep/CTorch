@@ -1,6 +1,5 @@
 #include "ctorch.h"
 #include "random.h"
-#include "tensor.h"
 
 #include <stdint.h>
 #include <time.h>
@@ -15,10 +14,3 @@ void ManualSeed(uint64_t seed) {
 }
 
 void CTorchClose() { free_rng(global_rng); };
-
-void auto_free_env(Environment **env) {
-    if (*env == NULL)
-        return;
-
-    free_env(*env);
-}

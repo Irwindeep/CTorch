@@ -44,7 +44,7 @@ void test_tensor_add() {
     free_array(t1_grad_arr);
     free_array(t2_grad_arr);
 
-    free_env(env);
+    free_env(&env);
 }
 
 void test_tensor_sub() {
@@ -84,7 +84,7 @@ void test_tensor_sub() {
     free_array(t1_grad_arr);
     free_array(t2_grad_arr);
 
-    free_env(env);
+    free_env(&env);
 }
 
 void test_tensor_mul() {
@@ -126,7 +126,7 @@ void test_tensor_mul() {
     free_array(t1_grad_arr);
     free_array(t2_grad_arr);
 
-    free_env(env);
+    free_env(&env);
 }
 
 void test_tensor_div() {
@@ -172,5 +172,5 @@ void test_tensor_div() {
     free_array(t1_grad_arr);
     free_array(t2_grad_arr);
 
-    free_env(env);
+    free_env(&env);
 }
