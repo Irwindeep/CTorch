@@ -9,20 +9,38 @@
     static void NAME(const T *A, const T *B, T *C, const size_t *sA,           \
                      const size_t *sB, const size_t *sC, int ndim,             \
                      size_t total_size, const size_t *shapeC) {                \
+        if (total_size == 0)                                                   \
+            return;                                                            \
+                                                                               \
+        if (ndim == 0) {                                                       \
+            C[0] = OP(A[0], B[0]);                                             \
+            return;                                                            \
+        }                                                                      \
+                                                                               \
+        size_t inner = shapeC[ndim - 1];                                       \
+        size_t outer = total_size / inner;                                     \
         _Pragma("omp parallel for schedule(static)") for (size_t i = 0;        \
-                                                          i < total_size;      \
-                                                          i++) {               \
+                                                          i < outer; i++) {    \
             size_t tmp = i;                                                    \
             size_t offsetA = 0, offsetB = 0, offsetC = 0;                      \
-            for (int d = ndim - 1; d >= 0; d--) {                              \
+            for (int d = ndim - 2; d >= 0; d--) {                              \
                 size_t idx = tmp % shapeC[d];                                  \
                 tmp /= shapeC[d];                                              \
-                                                                               \
                 offsetA += idx * sA[d];                                        \
                 offsetB += idx * sB[d];                                        \
                 offsetC += idx * sC[d];                                        \
             }                                                                  \
-            C[offsetC] = OP(A[offsetA], B[offsetB]);                           \
+            const T *a = A + offsetA;                                          \
+            const T *b = B + offsetB;                                          \
+            T *c = C + offsetC;                                                \
+                                                                               \
+            size_t sa = sA[ndim - 1];                                          \
+            size_t sb = sB[ndim - 1];                                          \
+            size_t sc = sC[ndim - 1];                                          \
+                                                                               \
+            for (size_t j = 0; j < inner; j++) {                               \
+                c[j * sc] = OP(a[j * sa], b[j * sb]);                          \
+            }                                                                  \
         }                                                                      \
     }
 
@@ -185,19 +203,38 @@ ndArray *array_min(ndArray *arr1, ndArray *arr2) {
     static void NAME(const T *A, const T *B, T *C, const size_t *sA,           \
                      const size_t *sB, const size_t *sC, int ndim,             \
                      size_t total_size, const size_t *shapeC) {                \
+        if (total_size == 0)                                                   \
+            return;                                                            \
+                                                                               \
+        if (ndim == 0) {                                                       \
+            C[0] = (A[0] OP B[0]) ? (T)1 : (T)0;                               \
+            return;                                                            \
+        }                                                                      \
+                                                                               \
+        size_t inner = shapeC[ndim - 1];                                       \
+        size_t outer = total_size / inner;                                     \
         _Pragma("omp parallel for schedule(static)") for (size_t i = 0;        \
-                                                          i < total_size;      \
-                                                          i++) {               \
+                                                          i < outer; i++) {    \
             size_t tmp = i;                                                    \
             size_t offsetA = 0, offsetB = 0, offsetC = 0;                      \
-            for (int d = ndim - 1; d >= 0; d--) {                              \
+            for (int d = ndim - 2; d >= 0; d--) {                              \
                 size_t idx = tmp % shapeC[d];                                  \
                 tmp /= shapeC[d];                                              \
                 offsetA += idx * sA[d];                                        \
                 offsetB += idx * sB[d];                                        \
                 offsetC += idx * sC[d];                                        \
             }                                                                  \
-            C[offsetC] = (A[offsetA] OP B[offsetB]) ? (T)1 : (T)0;             \
+            const T *a = A + offsetA;                                          \
+            const T *b = B + offsetB;                                          \
+            T *c = C + offsetC;                                                \
+                                                                               \
+            size_t sa = sA[ndim - 1];                                          \
+            size_t sb = sB[ndim - 1];                                          \
+            size_t sc = sC[ndim - 1];                                          \
+                                                                               \
+            for (size_t j = 0; j < inner; j++) {                               \
+                c[j * sc] = (a[j * sa] OP b[j * sb]) ? (T)1 : (T)0;            \
+            }                                                                  \
         }                                                                      \
     }
 
@@ -280,8 +317,9 @@ ndArray *inverse(ndArray *array) {
     static void NAME(const T *A, T *B, size_t total_size) {                    \
         T sum = (T)0;                                                          \
                                                                                \
-        _Pragma("omp parallel for reduction(+:sum) schedule(static)") for (    \
-            size_t i = 0; i < total_size; i++) {                               \
+        _Pragma(                                                               \
+            "omp parallel for simd reduction(+:sum)                       \
+                schedule(static)") for (size_t i = 0; i < total_size; i++) {   \
             sum += A[i];                                                       \
         }                                                                      \
                                                                                \
@@ -329,33 +367,78 @@ ndArray *array_sum(ndArray *array) {
     return result;
 }
 
-#define _ARRAY_SUM_DIM_KERNEL(T, NAME)                                         \
-    static void NAME(const T *A, T *B, int ndimA, int ndimB, int dim,          \
-                     bool keepdims, const size_t *shapeA,                      \
-                     const size_t *stridesA, size_t total_sizeB) {             \
-        _Pragma("omp parallel for schedule(static)") for (size_t i = 0;        \
-                                                          i < total_sizeB;     \
-                                                          i++) {               \
-            size_t tmp = i;                                                    \
-            size_t offsetA = 0;                                                \
-                                                                               \
-            for (int dA = ndimA - 1; dA >= 0; dA--) {                          \
-                if (dA == dim)                                                 \
-                    continue;                                                  \
-                                                                               \
-                size_t idx = tmp % shapeA[dA];                                 \
-                tmp /= shapeA[dA];                                             \
-                                                                               \
-                offsetA += idx * stridesA[dA];                                 \
-            }                                                                  \
-                                                                               \
-            T sum = (T)0;                                                      \
-            size_t stride_dim = stridesA[dim];                                 \
-            for (size_t k = 0; k < shapeA[dim]; k++)                           \
-                sum += A[offsetA + k * stride_dim];                            \
-                                                                               \
-            B[i] = sum;                                                        \
-        }                                                                      \
+#define _ARRAY_SUM_DIM_KERNEL(T, NAME)                                          \
+    static void NAME(const T *restrict A, T *restrict B, int ndimA, int ndimB,  \
+                     int dim, bool keepdims, const size_t *shapeA,              \
+                     const size_t *stridesA, size_t total_sizeB) {              \
+        if (total_sizeB == 0)                                                   \
+            return;                                                             \
+                                                                                \
+        /* scalar result (all reduced to one value) */                          \
+        if (total_sizeB == 1) {                                                 \
+            size_t stride_dim = stridesA[dim];                                  \
+            T sum = (T)0;                                                       \
+            const T *p = A;                                                     \
+            if (stride_dim == 1) {                                              \
+                /* contiguous reduce */                                         \
+                const T *end = p + shapeA[dim];                                 \
+                /* vectorize */                                                 \
+                _Pragma("omp simd reduction(+:sum)") for (const T *q = p;       \
+                                                          q < end; ++q) sum +=  \
+                    *q;                                                         \
+            } else {                                                            \
+                _Pragma("omp simd reduction(+:sum)") for (size_t k = 0;         \
+                                                          k < shapeA[dim];      \
+                                                          ++k) sum +=           \
+                    p[k * stride_dim];                                          \
+            }                                                                   \
+            B[0] = sum;                                                         \
+            return;                                                             \
+        }                                                                       \
+                                                                                \
+        /* General case: work over each output element independently */         \
+        _Pragma("omp parallel for schedule(static)") for (size_t out_idx = 0;   \
+                                                          out_idx <             \
+                                                          total_sizeB;          \
+                                                          ++out_idx) {          \
+            /* decode output index into multi-index using repeated div/mod */   \
+            /* We keep decoding — still fine for medium dims — but accelerate \
+               the inner reduction heavily (vectorized pointer loop). */        \
+            size_t tmp = out_idx;                                               \
+            size_t offsetA = 0;                                                 \
+                                                                                \
+            /* map out_idx -> offsetA (skipping dim) */                         \
+            for (int dA = ndimA - 1; dA >= 0; --dA) {                           \
+                if (dA == dim)                                                  \
+                    continue;                                                   \
+                size_t idx = tmp % shapeA[dA];                                  \
+                tmp /= shapeA[dA];                                              \
+                offsetA += idx * stridesA[dA];                                  \
+            }                                                                   \
+                                                                                \
+            T sum = (T)0;                                                       \
+            size_t stride_dim = stridesA[dim];                                  \
+                                                                                \
+            const T *base = A + offsetA;                                        \
+            if (stride_dim == 1) {                                              \
+                /* contiguous across reduction dimension: best case */          \
+                const T *end = base + shapeA[dim];                              \
+                _Pragma("omp simd reduction(+:sum)") for (const T *q = base;    \
+                                                          q < end; ++q) sum +=  \
+                    *q;                                                         \
+            } else {                                                            \
+                /* non-contiguous: advance pointer by stride_dim */             \
+                const T *q = base;                                              \
+                _Pragma("omp simd reduction(+:sum)") for (size_t k = 0;         \
+                                                          k < shapeA[dim];      \
+                                                          ++k) {                \
+                    sum += *q;                                                  \
+                    q += stride_dim;                                            \
+                }                                                               \
+            }                                                                   \
+                                                                                \
+            B[out_idx] = sum;                                                   \
+        }                                                                       \
     }
 
 _ARRAY_SUM_DIM_KERNEL(int, _array_sum_dim_i)
