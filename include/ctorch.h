@@ -1,10 +1,6 @@
 #ifndef CTORCH_H
 #define CTORCH_H
 
-#include "nn.h"
-#include "optim.h"
-#include "tensor.h"
-
 #include <stdint.h>
 
 void CTorchInit();
