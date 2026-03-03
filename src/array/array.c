@@ -150,7 +150,7 @@ void set_value(ndArray *array, const size_t *indices, ArrayVal value) {
 }
 
 void set_strides(ndArray *array, const size_t *strides) {
-    memcpy(array->strides, strides, array->ndim);
+    memcpy(array->strides, strides, array->ndim * sizeof(size_t));
 }
 
 void populate_array(ndArray *array, const void *data) {
