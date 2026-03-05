@@ -67,12 +67,6 @@ target_compile_options(
 target_link_libraries(ctorch PRIVATE ctorch_warnings)
 target_link_libraries(ctorchvision PRIVATE ctorch_warnings)
 
-# Main executable
-
-add_executable(main main.c)
-target_link_libraries(main PRIVATE ctorch ctorchvision)
-target_compile_options(main PUBLIC -O3 -march=native)
-
 # Tests
 
 if(BUILD_TESTING)
