@@ -2,9 +2,8 @@
 #define TRANSFORMS_H
 
 #include "tensor.h"
+#include "vision.h"
 
-#include <vips/vips.h>
-
-Tensor *ToTensor(VipsImage *image, Environment *env);
+Tensor *ToTensor(Image *image, Environment *env);
 
 #endif // !TRANSFORMS_H

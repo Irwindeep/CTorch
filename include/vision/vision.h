@@ -3,12 +3,13 @@
 
 #include <stdbool.h>
 #include <stddef.h>
-#include <vips/vips.h>
+
+typedef struct Image Image;
 
 void VisionInit(void);
 void VisionClose(void);
 
-VipsImage *load_image(const char *path);
-void free_image(VipsImage *image);
+Image *load_image(const char *path);
+void free_image(Image *image);
 
 #endif // !VISION_H

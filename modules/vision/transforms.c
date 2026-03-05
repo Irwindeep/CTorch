@@ -7,10 +7,11 @@
 #include <stddef.h>
 #include <vips/vips.h>
 
-Tensor *ToTensor(VipsImage *image, Environment *env) {
-    int channels = vips_image_get_bands(image);
-    int height = vips_image_get_height(image);
-    int width = vips_image_get_width(image);
+Tensor *ToTensor(Image *image, Environment *env) {
+    VipsImage *img = *(VipsImage **)image;
+    int channels = vips_image_get_bands(img);
+    int height = vips_image_get_height(img);
+    int width = vips_image_get_width(img);
 
     const size_t shape[] = {(size_t)channels, (size_t)height, (size_t)width};
     int ndim = sizeof(shape) / sizeof(shape[0]);
@@ -21,7 +22,7 @@ Tensor *ToTensor(VipsImage *image, Environment *env) {
     float *arr = (float *)get_array_data(data);
 
     size_t mem_size;
-    unsigned char *buffer = vips_image_write_to_memory(image, &mem_size);
+    unsigned char *buffer = vips_image_write_to_memory(img, &mem_size);
 
     if (!buffer) {
         free_image(image);
