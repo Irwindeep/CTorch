@@ -28,7 +28,7 @@ find_library(M_LIB m)
 file(GLOB_RECURSE CTORCH_SOURCES CONFIGURE_DEPENDS
      "${CMAKE_CURRENT_SOURCE_DIR}/src/*.c")
 
-add_library(ctorch STATIC)
+add_library(ctorch SHARED)
 target_sources(ctorch PRIVATE ${CTORCH_SOURCES})
 
 target_include_directories(
@@ -40,7 +40,21 @@ if(M_LIB)
   target_link_libraries(ctorch PUBLIC ${M_LIB})
 endif()
 
-target_compile_options(ctorch PRIVATE -O3 -march=native -ffast-math)
+target_compile_options(
+  ctorch
+  PRIVATE -Wall
+          -Wextra
+          -Wpedantic
+          -Wshadow
+          -Wconversion
+          -Wsign-conversion
+          -Wformat=2
+          -Wvla
+          -Wnull-dereference
+          -Wdouble-promotion
+          -O3
+          -march=native
+          -ffast-math)
 
 if(BUILD_TESTING)
   add_subdirectory(tests)

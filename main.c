@@ -10,11 +10,12 @@
 
 #include <stdio.h>
 
+#define RANDOM_SEED 0xDEADBEEF
 #define BATCH_SIZE 128
 
 int main() {
     CTorchInit();
-    ManualSeed(12);
+    ManualSeed(RANDOM_SEED);
 
     ScopedModule model = Sequential(Linear(784, 128), ReLU(), Linear(128, 10));
 
