@@ -1,5 +1,6 @@
 #include "autograd.h"
 #include "error_codes.h"
+#include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -15,12 +16,12 @@ void *deep_copy_ctx(void *ctx, Ctx ctx_kind) {
             RUNTIME_ERROR(ARRAY_INIT_FAILURE, "Failure to allocate Context");
 
         ctx_copy->ndim = ((TransposeCtx *)ctx)->ndim;
-        ctx_copy->dims = malloc(ctx_copy->ndim * sizeof(int));
+        ctx_copy->dims = malloc((size_t)ctx_copy->ndim * sizeof(int));
         if (!ctx_copy->dims)
             RUNTIME_ERROR(ARRAY_INIT_FAILURE,
                           "Failure to allocate Context dims");
         memcpy(ctx_copy->dims, ((TransposeCtx *)ctx)->dims,
-               ctx_copy->ndim * sizeof(int));
+               (size_t)ctx_copy->ndim * sizeof(int));
 
         return ctx_copy;
     }

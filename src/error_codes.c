@@ -55,9 +55,9 @@ const char *error_code_to_string(ErrorCode code) {
 
 void print_error(const Error *err) {
     fprintf(stderr,
-            "\e[1;31mError Code %d [%s]\e[0m\n"
-            "\t\e[1;31mMessage \e[0m: \e[1;36m%s\033[0m\n"
-            "\t\e[1;31mLocation\e[0m: \e[1;36m%s:%d\033[0m\n",
+            "\033[1;31mError Code %d [%s]\033[0m\n"
+            "\t\033[1;31mMessage \033[0m: \033[1;36m%s\033[0m\n"
+            "\t\033[1;31mLocation\033[0m: \033[1;36m%s:%d\033[0m\n",
             err->code, error_code_to_string(err->code), err->message,
             err->file ? err->file : "(unknown)", err->line);
 }

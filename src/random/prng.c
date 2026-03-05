@@ -10,6 +10,9 @@ struct PRNG {
     __uint128_t inc; // must be odd
 };
 
+static const __uint128_t PCG64_MULT =
+    ((__uint128_t)0x2360ED051FC65DA4ULL << 64) | 0x4385DF649FCCF645ULL;
+
 static inline void pcg64_seed(PRNG *rng, __uint128_t initstate,
                               __uint128_t initseq) {
     rng->state = 0;
@@ -47,14 +50,12 @@ uint64_t rng_rand(PRNG *rng) {
     __uint128_t old = rng->state;
 
     /* LCG step */
-    rng->state = old * (((__uint128_t)6364136223846793005ULL << 64) |
-                        1442695040888963407ULL) +
-                 rng->inc;
+    rng->state = old * PCG64_MULT + rng->inc;
 
     /* XSL RR output transform */
     uint64_t xorshifted = (uint64_t)(((old >> 64) ^ old) >> 64);
 
-    uint64_t rot = old >> 122;
+    uint64_t rot = (uint64_t)(old >> 122);
     return (xorshifted >> rot) | (xorshifted << ((-rot) & 63));
 }
 

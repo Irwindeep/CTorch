@@ -15,7 +15,7 @@ typedef struct Environment Environment;
 typedef struct Tensor Tensor;
 typedef struct BackwardFn BackwardFn;
 
-Environment *env_init();
+Environment *env_init(void);
 void free_env(Environment **env);
 
 void env_push(Environment *env, Tensor *tensor);

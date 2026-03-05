@@ -18,7 +18,7 @@ struct Environment {
     bool lock;
 };
 
-Environment *env_init() {
+Environment *env_init(void) {
     Environment *env = malloc(sizeof(Environment));
     if (!env)
         RUNTIME_ERROR(ENV_INIT_FAILURE, "Failure to create environment");

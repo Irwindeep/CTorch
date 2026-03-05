@@ -72,8 +72,7 @@ void broadcast_shape(const size_t *shape1, const size_t *shape2, size_t *shape,
                      int ndim1, int ndim2, int ndim);
 
 void broadcasted_strides(size_t *strides, const size_t *src_strides,
-                         const size_t *src_shape, int src_ndim,
-                         const size_t *dst_shape, int dst_ndim);
+                         const size_t *src_shape, int src_ndim, int dst_ndim);
 
 void get_broadcasted_indices(const size_t *shape1, const size_t *shape2,
                              const size_t *shape, int ndim1, int ndim2,

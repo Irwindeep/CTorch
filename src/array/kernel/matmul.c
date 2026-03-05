@@ -6,7 +6,7 @@
 #include <stddef.h>
 #include <stdlib.h>
 
-static inline bool is_contig(size_t rows, size_t cols, size_t sR, size_t sC) {
+static inline bool is_contig(size_t cols, size_t sR, size_t sC) {
     return (sR == cols && sC == 1);
 }
 
@@ -23,15 +23,12 @@ void matmul_kernel(const ndArray *arr1, const ndArray *arr2, ndArray *result,
            sAc = get_strides(arr1)[ndim1 - 1] / get_itemsize(arr1);
     size_t sBr = get_strides(arr2)[ndim2 - 2] / get_itemsize(arr2),
            sBc = get_strides(arr2)[ndim2 - 1] / get_itemsize(arr2);
-    size_t sCr = get_strides(result)[ndim - 2] / get_itemsize(result),
-           sCc = get_strides(result)[ndim - 1] / get_itemsize(result);
 
     size_t offsetA = index_to_offset(idx1, get_strides(arr1), ndim1 - 2),
            offsetB = index_to_offset(idx2, get_strides(arr2), ndim2 - 2),
            offsetC = index_to_offset(idx, get_strides(result), ndim - 2);
 
-    bool A_contig = is_contig(m, k, sAr, sAc),
-         B_contig = is_contig(k, n, sBr, sBc);
+    bool A_contig = is_contig(k, sAr, sAc), B_contig = is_contig(n, sBr, sBc);
 
     CBLAS_TRANSPOSE transA = A_contig ? CblasNoTrans : CblasTrans;
     CBLAS_TRANSPOSE transB = B_contig ? CblasNoTrans : CblasTrans;
@@ -43,20 +40,20 @@ void matmul_kernel(const ndArray *arr1, const ndArray *arr2, ndArray *result,
     default:
         break;
     case DTYPE_FLOAT: {
-        const float *A = (float *)(get_array_data(arr1) + offsetA);
-        const float *B = (float *)(get_array_data(arr2) + offsetB);
-        float *C = (float *)(get_array_data(result) + offsetC);
+        const float *A = (float *)((char *)get_array_data(arr1) + offsetA);
+        const float *B = (float *)((char *)get_array_data(arr2) + offsetB);
+        float *C = (float *)((char *)get_array_data(result) + offsetC);
 
         cblas_sgemm(CblasRowMajor, transA, transB, (int)m, (int)n, (int)k, 1.0f,
                     A, lda, B, ldb, 0.0f, C, (int)n);
     } break;
     case DTYPE_DOUBLE: {
-        const double *A = (double *)(get_array_data(arr1) + offsetA);
-        const double *B = (double *)(get_array_data(arr2) + offsetB);
-        double *C = (double *)(get_array_data(result) + offsetC);
+        const double *A = (double *)((char *)get_array_data(arr1) + offsetA);
+        const double *B = (double *)((char *)get_array_data(arr2) + offsetB);
+        double *C = (double *)((char *)get_array_data(result) + offsetC);
 
-        cblas_dgemm(CblasRowMajor, transA, transB, (int)m, (int)n, (int)k, 1.0f,
-                    A, lda, B, ldb, 0.0f, C, (int)n);
+        cblas_dgemm(CblasRowMajor, transA, transB, (int)m, (int)n, (int)k, 1.0,
+                    A, lda, B, ldb, 0.0, C, (int)n);
     } break;
     }
 }

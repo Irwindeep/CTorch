@@ -53,9 +53,15 @@ struct relu {
     Module base;
 };
 
-Tensor *relu_forward(void *module, Tensor *input) { return _relu(input); }
+Tensor *relu_forward(void *module, Tensor *input) {
+    Module *m = (Module *)module;
+    if (!m)
+        return NULL;
 
-relu *_ReLU() {
+    return _relu(input);
+}
+
+relu *_ReLU(void) {
     relu *layer = calloc(1, sizeof(relu));
     if (!layer)
         RUNTIME_ERROR(MODULE_ALLOC_FAILURE, "Failed to allocate ReLU layer");

@@ -32,7 +32,7 @@ struct ProgressBar {
     double start_time;
 };
 
-static int _get_terminal_width() {
+static int _get_terminal_width(void) {
 #ifdef _WIN32
     CONSOLE_SCREEN_BUFFER_INFO csbi;
     if (GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &csbi)) {
@@ -49,7 +49,7 @@ static int _get_terminal_width() {
 static inline double now_sec(void) {
     struct timespec ts;
     clock_gettime(CLOCK_MONOTONIC, &ts);
-    return ts.tv_sec + ts.tv_nsec * 1e-9;
+    return (double)(ts.tv_sec) + (double)ts.tv_nsec * 1e-9;
 }
 
 int num_digits(int num) {
@@ -110,7 +110,7 @@ void progress_update(ProgressBar *bar, int current, const char *desc,
         current = bar->total;
 
     int term_width = _get_terminal_width();
-    float ratio = (float)current / bar->total;
+    float ratio = (float)current / (float)bar->total;
     int percent = (int)(ratio * 100.0f);
 
     double now = now_sec();
@@ -138,7 +138,6 @@ void progress_update(ProgressBar *bar, int current, const char *desc,
     int left_len = visible_len(left);
     int right_len = visible_len(right);
 
-    int spacing = 4;
     int percent_len = 4;
     int fixed_chars = 4;
 
@@ -166,7 +165,7 @@ void progress_update(ProgressBar *bar, int current, const char *desc,
     printf("%s", right);
     printf("%s[", COLOR_BLUE);
 
-    int pos = (int)(ratio * (bar_width - 1));
+    int pos = (int)(ratio * (float)(bar_width - 1));
 
     if (current == bar->total) {
         for (int i = 0; i < bar_width; i++)

@@ -20,17 +20,18 @@
                            num_inputs, (size_t)n_inputs, num_outputs,          \
                            (size_t)n_outputs, #name);                          \
         }                                                                      \
+                                                                               \
+        if (!outputs || !output_grads)                                         \
+            return;                                                            \
+                                                                               \
         __VA_ARGS__                                                            \
     }
 
 _DEFINE_GRAD_FN(_accumulate_grad_fn, 1, 0, {
-    if (create_graph) {
+    if (create_graph)
         return;
-    }
 
     Tensor *tensor = inputs[0], *grad = input_grads[0];
-    Environment *env = get_tensor_environ(tensor);
-
     Tensor *tensor_grad = get_tensor_grad(tensor);
     if (!tensor_grad) {
         zero_grad(tensor);
@@ -53,7 +54,10 @@ _DEFINE_GRAD_FN(_accumulate_grad_fn, 1, 0, {
         ndArray *data1 = get_tensor_data(t1), *data2 = get_tensor_data(t2);    \
         ndArray *grad_data = get_tensor_data(grad);                            \
                                                                                \
-        size_t t1_ndim = get_tensor_ndim(t1), t2_ndim = get_tensor_ndim(t2);   \
+        if (!data1 || !data2)                                                  \
+            return;                                                            \
+                                                                               \
+        int t1_ndim = get_tensor_ndim(t1), t2_ndim = get_tensor_ndim(t2);      \
         const size_t *t1_shape = get_tensor_shape(t1),                         \
                      *t2_shape = get_tensor_shape(t2);                         \
         bool t1_requires_grad = get_requires_grad(t1),                         \
@@ -166,7 +170,7 @@ _DEFINE_GRAD_FN(_transpose_grad_fn, 1, 1, {
     }
 })
 
-static void inline _get_dims_for_matmul_grad(Tensor *t, int *dims) {
+inline static void _get_dims_for_matmul_grad(Tensor *t, int *dims) {
     int ndim = get_tensor_ndim(t);
     for (int d = 0; d < ndim; d++)
         dims[d] = d;
@@ -177,14 +181,14 @@ static void inline _get_dims_for_matmul_grad(Tensor *t, int *dims) {
 
 _ONE_IP_TWO_OP_GRAD_FN(
     _matmul_grad_fn, BLOCK({
-        int t2_dims[t2_ndim];
+        int t2_dims[MAX_NDIM];
         _get_dims_for_matmul_grad(t2, t2_dims);
         Tensor *t2_T = tensor_transpose_env(t2, t2_dims, env);
         t1_grad = tensor_matmul(grad, t2_T);
         t1_grad = broadcast_tensor_grad(t1_grad, t1_ndim, t1_shape);
     }),
     BLOCK({
-        int t1_dims[t1_ndim];
+        int t1_dims[MAX_NDIM];
         _get_dims_for_matmul_grad(t1, t1_dims);
         Tensor *t1_T = tensor_transpose_env(t1, t1_dims, env);
         t2_grad = tensor_matmul(t1_T, grad);
@@ -192,7 +196,7 @@ _ONE_IP_TWO_OP_GRAD_FN(
     }),
 
     BLOCK({
-        int t2_dims[t2_ndim];
+        int t2_dims[MAX_NDIM];
         _get_dims_for_matmul_grad(t2, t2_dims);
         ndArray *data2_T = transpose(data2, t2_dims);
 
@@ -202,7 +206,7 @@ _ONE_IP_TWO_OP_GRAD_FN(
         free_array(data2_T);
     }),
     BLOCK({
-        int t1_dims[t1_ndim];
+        int t1_dims[MAX_NDIM];
         _get_dims_for_matmul_grad(t1, t1_dims);
         ndArray *data1_T = transpose(data1, t1_dims);
 

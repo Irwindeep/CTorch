@@ -52,31 +52,23 @@ typedef struct {
 void print_error(const Error *err);
 void exit_with_error(const Error *err);
 
-#define MAKE_ERROR(code_, msg_)                                                \
-    (Error) {                                                                  \
-        .code = (code_), .message = (msg_), .file = __FILE__, .line = __LINE__ \
-    }
-
 #define RUNTIME_ERROR(code_, msg_)                                             \
     do {                                                                       \
-        Error _err = MAKE_ERROR(code_, msg_);                                  \
-        exit_with_error(&_err);                                                \
+        Error err = (Error){.code = code_,                                     \
+                            .message = msg_,                                   \
+                            .file = __FILE__,                                  \
+                            .line = __LINE__};                                 \
+        exit_with_error(&err);                                                 \
     } while (0)
-
-#define MAKE_ERRORF(code_, fmt_, ...)                                          \
-    ({                                                                         \
-        Error _err;                                                            \
-        _err.code = (code_);                                                   \
-        snprintf(_err.message, ERROR_MSG_MAX, fmt_, __VA_ARGS__);              \
-        _err.file = __FILE__;                                                  \
-        _err.line = __LINE__;                                                  \
-        _err;                                                                  \
-    })
 
 #define RUNTIME_ERRORF(code_, fmt_, ...)                                       \
     do {                                                                       \
-        Error _err = MAKE_ERRORF(code_, fmt_, __VA_ARGS__);                    \
-        exit_with_error(&_err);                                                \
+        Error err;                                                             \
+        err.code = code_;                                                      \
+        snprintf(err.message, ERROR_MSG_MAX, fmt_, __VA_ARGS__);               \
+        err.file = __FILE__;                                                   \
+        err.line = __LINE__;                                                   \
+        exit_with_error(&err);                                                 \
     } while (0)
 
 #endif // !ERROR_CODES_H

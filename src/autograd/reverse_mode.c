@@ -28,7 +28,7 @@ static void _gradient_backward(Tensor **inputs, Tensor **grads,
 
     CallableGradFn grad_fn = get_grad_fn(backward_fn);
 
-    Tensor *op_grads[num_fn_outputs];
+    Tensor **op_grads = malloc(num_fn_outputs * sizeof(Tensor *));
     grad_fn(op_grads, cur_inputs, outputs, cur_grads, num_fn_inputs,
             num_fn_outputs, create_graph);
 
@@ -49,13 +49,15 @@ static void _gradient_backward(Tensor **inputs, Tensor **grads,
         Tensor **next_inputs = get_backward_fn_ip_tensors(next_fn);
         size_t next_n = get_backward_inputs(next_fn);
 
-        Tensor *next_grads[next_n];
+        Tensor **next_grads = malloc(next_n * sizeof(Tensor *));
         for (size_t j = 0; j < next_n; j++)
             next_grads[j] = g;
 
         _gradient_backward(inputs, grads, num_inputs, next_inputs, next_grads,
                            next_fn, create_graph);
+        free(next_grads);
     }
+    free(op_grads);
 }
 
 void gradient(Tensor **grads, size_t num_inputs, Tensor **inputs,
@@ -95,7 +97,7 @@ static inline void _backward(Tensor **inputs, Tensor **grads,
     BackwardFn **next_fns = get_next_functions(backward_fn);
 
     CallableGradFn grad_fn = get_grad_fn(backward_fn);
-    Tensor *op_grads[num_outputs];
+    Tensor **op_grads = malloc(num_outputs * sizeof(Tensor *));
     grad_fn(op_grads, inputs, outputs, grads, num_inputs, num_outputs, false);
 
     size_t i = 0;
@@ -109,12 +111,14 @@ static inline void _backward(Tensor **inputs, Tensor **grads,
         Tensor **next_fn_inputs = get_backward_fn_ip_tensors(next_fn);
         size_t next_fn_num_ips = get_backward_inputs(next_fn);
 
-        Tensor *next_fn_ip_grads[next_fn_num_ips];
+        Tensor **next_fn_ip_grads = malloc(next_fn_num_ips * sizeof(Tensor *));
         for (size_t j = 0; j < next_fn_num_ips; j++)
             next_fn_ip_grads[j] = op_grads[i++];
 
         _backward(next_fn_inputs, next_fn_ip_grads, next_fn);
+        free(next_fn_ip_grads);
     }
+    free(op_grads);
 }
 
 void backward(Tensor *tensor, Tensor *grad) {
@@ -124,7 +128,7 @@ void backward(Tensor *tensor, Tensor *grad) {
                       "Invalid backward pass on non-requires_grad tensor");
 
     if (!grad) {
-        size_t ndim = get_tensor_ndim(tensor);
+        int ndim = get_tensor_ndim(tensor);
         size_t *shape = get_tensor_shape(tensor);
         DType dtype = get_tensor_dtype(tensor);
 

@@ -16,20 +16,24 @@ Tensor *Parameter(int ndim, const size_t *shape, float bound,
 
 void freeze(Module *module) {
     size_t num_params = num_parameters(module);
-    Tensor *params[num_params];
+    Tensor **params = malloc(num_params * sizeof(Tensor *));
     parameters(module, params);
 
     for (size_t i = 0; i < num_params; i++)
         set_requires_grad(params[i], false);
+
+    free(params);
 }
 
 void unfreeze(Module *module) {
     size_t num_params = num_parameters(module);
-    Tensor *params[num_params];
+    Tensor **params = malloc(num_params * sizeof(Tensor *));
     parameters(module, params);
 
     for (size_t i = 0; i < num_params; i++)
         set_requires_grad(params[i], true);
+
+    free(params);
 }
 
 void module_init(Module *module) {
@@ -86,7 +90,7 @@ void parameters(Module *module, Tensor **out) {
 
 size_t num_trainable_variables(Module *module) {
     size_t num_params = num_parameters(module);
-    Tensor *params[num_params];
+    Tensor **params = malloc(num_params * sizeof(Tensor *));
     parameters(module, params);
 
     size_t num_trainable_vars = 0;
@@ -98,12 +102,13 @@ size_t num_trainable_variables(Module *module) {
         num_trainable_vars += get_total_size(get_tensor_data(param));
     }
 
+    free(params);
     return num_trainable_vars;
 }
 
 size_t num_non_trainable_variables(Module *module) {
     size_t num_params = num_parameters(module);
-    Tensor *params[num_params];
+    Tensor **params = malloc(num_params * sizeof(Tensor *));
     parameters(module, params);
 
     size_t num_non_trainable_vars = 0;
@@ -115,6 +120,7 @@ size_t num_non_trainable_variables(Module *module) {
         num_non_trainable_vars += get_total_size(get_tensor_data(param));
     }
 
+    free(params);
     return num_non_trainable_vars;
 }
 

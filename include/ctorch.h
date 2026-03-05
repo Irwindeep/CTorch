@@ -3,9 +3,9 @@
 
 #include <stdint.h>
 
-void CTorchInit();
+void CTorchInit(void);
 void ManualSeed(uint64_t seed);
-void CTorchClose();
+void CTorchClose(void);
 
 #if defined(__GNUC__) || defined(__clang__)
 #define ScopedEnvironment __attribute__((cleanup(free_env))) Environment *

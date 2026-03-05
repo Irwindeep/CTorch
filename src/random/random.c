@@ -9,11 +9,11 @@
 #include <stdlib.h>
 
 static inline double prng_uniform_d(PRNG *rng) {
-    return (rng_rand(rng) >> 11) * (1.0 / 9007199254740992.0);
+    return (double)(rng_rand(rng) >> 11) * (1.0 / 9007199254740992.0);
 }
 
 static inline float prng_uniform_f(PRNG *rng) {
-    return (rng_rand(rng) >> 40) * (1.0f / 16777216.0f);
+    return (float)(rng_rand(rng) >> 40) * (1.0f / 16777216.0f);
 }
 
 Tensor *uniform(int ndim, const size_t *shape, float bound, DType dtype,
@@ -34,7 +34,7 @@ Tensor *uniform(int ndim, const size_t *shape, float bound, DType dtype,
             break;
         }
         for (size_t i = 0; i < total_size; i++)
-            arr_data[i] = (2 * prng_uniform_d(global_rng) - 1) * bound;
+            arr_data[i] = (2 * prng_uniform_d(global_rng) - 1) * (double)bound;
 
         populate_array(data, arr_data);
         free(arr_data);
@@ -83,21 +83,21 @@ static inline double prng_randn_d(PRNG *rng) {
 
 static inline float prng_randn_f(PRNG *rng) {
     static int has_spare_f = 0;
-    static double spare_f;
+    static float spare_f;
 
     if (has_spare_f) {
         has_spare_f = 0;
         return spare_f;
     }
 
-    double u, v, s;
+    float u, v, s;
     do {
-        u = prng_uniform_d(rng) * 2.0 - 1.0;
-        v = prng_uniform_d(rng) * 2.0 - 1.0;
+        u = prng_uniform_f(rng) * 2.0f - 1.0f;
+        v = prng_uniform_f(rng) * 2.0f - 1.0f;
         s = u * u + v * v;
-    } while (s >= 1.0 || s == 0.0);
+    } while (s >= 1.0f || s == 0.0f);
 
-    s = sqrt(-2.0 * log(s) / s);
+    s = (float)sqrt(-2.0 * log((double)s) / (double)s);
     spare_f = v * s;
     has_spare_f = 1;
     return u * s;
@@ -208,7 +208,7 @@ Tensor *randint(int ndim, const size_t *shape, long int low, long int high,
             break;
         }
         for (size_t i = 0; i < total_size; i++)
-            arr_data[i] = pcg64_randint_i(global_rng, low, high);
+            arr_data[i] = pcg64_randint_i(global_rng, (int)low, (int)high);
 
         populate_array(data, arr_data);
         free(arr_data);

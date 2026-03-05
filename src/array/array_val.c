@@ -1,4 +1,5 @@
 #include "array.h"
+#include <stdbool.h>
 #include <stdio.h>
 
 ArrayVal array_val_one(DType dtype) {
@@ -139,14 +140,14 @@ static float float_abs(float x) { return (x > 0) ? x : -x; }
 static double double_abs(double x) { return (x > 0) ? x : -x; }
 
 bool array_val_equal(ArrayVal v1, ArrayVal v2, DType dtype) {
-    bool is_equal;
+    bool is_equal = false;
 
     switch (dtype) {
     case DTYPE_INT:
         is_equal = v1.int_val == v2.int_val;
         break;
     case DTYPE_FLOAT:
-        is_equal = float_abs(v1.float_val - v2.float_val) < FLOAT_EQ_TOL;
+        is_equal = float_abs(v1.float_val - v2.float_val) < (float)FLOAT_EQ_TOL;
         break;
     case DTYPE_DOUBLE:
         is_equal = double_abs(v1.double_val - v2.double_val) < DOUBLE_EQ_TOL;

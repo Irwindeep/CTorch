@@ -52,7 +52,7 @@ typedef struct relu relu;
 typedef struct sequential sequential;
 
 linear *_Linear(size_t in_features, size_t out_features, bool bias);
-relu *_ReLU();
+relu *_ReLU(void);
 sequential *_Sequential(size_t num_modules, Module **modules);
 
 #define Linear(in_features, out_features)                                      \

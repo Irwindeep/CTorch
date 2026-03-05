@@ -11,13 +11,13 @@ static void _batch_matmul(ndArray *arr1, ndArray *arr2, ndArray *result) {
     int ndim1 = get_ndim(arr1), ndim2 = get_ndim(arr2), ndim = get_ndim(result);
     int batch_ndim1 = ndim1 - 2, batch_ndim2 = ndim2 - 2, batch_ndim = ndim - 2;
 
-    size_t idx1[ndim1], idx2[ndim2], idx[ndim];
+    size_t idx1[MAX_NDIM], idx2[MAX_NDIM], idx[MAX_NDIM];
     size_t batch_size = 1;
 
     for (int i = 0; i < batch_ndim; i++)
         batch_size *= get_shape(result)[i];
 
-    for (int b = 0; b < (batch_ndim == 0 ? 1 : batch_size); b++) {
+    for (size_t b = 0; b < (batch_ndim == 0 ? 1 : batch_size); b++) {
         get_broadcasted_indices(get_shape(arr1), get_shape(arr2),
                                 get_shape(result), batch_ndim1, batch_ndim2,
                                 batch_ndim, idx1, idx2, idx, b);
@@ -61,10 +61,10 @@ ndArray *matmul(ndArray *arr1, ndArray *arr2) {
     int batch_ndim1 = get_ndim(arr1) - 2, batch_ndim2 = get_ndim(arr2) - 2;
     int batch_ndim = (batch_ndim1 > batch_ndim2) ? batch_ndim1 : batch_ndim2;
 
-    size_t batch_shape[batch_ndim];
+    size_t batch_shape[MAX_NDIM];
     broadcast_shape(get_shape(arr1), get_shape(arr2), batch_shape, batch_ndim1,
                     batch_ndim2, batch_ndim);
-    size_t shape[batch_ndim + 2];
+    size_t shape[MAX_NDIM];
 
     for (int i = 0; i < batch_ndim; i++)
         shape[i] = batch_shape[i];
@@ -95,7 +95,7 @@ ndArray *transpose(ndArray *array, const int *dims) {
     size_t *strides = get_strides(result);
     int ndim = get_ndim(result);
 
-    size_t new_shape[ndim], new_strides[ndim];
+    size_t new_shape[MAX_NDIM], new_strides[MAX_NDIM];
 
     if (_repeated_dims(dims, ndim))
         RUNTIME_ERROR(REPEATED_ARRAY_DIMS, "Repeated Array dims");
@@ -115,4 +115,4 @@ ndArray *transpose(ndArray *array, const int *dims) {
     }
 
     return result;
-};
+}

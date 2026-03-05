@@ -13,15 +13,15 @@
 void print_with_commas(size_t num) {
     char buf[32];
     char out[32];
-    int len, i, j, count = 0;
+    ssize_t i, j, count = 0;
 
     snprintf(buf, sizeof(buf), "%zu", num);
-    len = strlen(buf);
+    size_t len = strlen(buf);
 
     out[31] = '\0';
     j = 30;
 
-    for (i = len - 1; i >= 0; i--) {
+    for (i = (ssize_t)len - 1; i >= 0; i--) {
         out[j--] = buf[i];
         if (++count == 3 && i != 0) {
             out[j--] = ',';
@@ -150,7 +150,7 @@ static void compute_max_width_rec(const ndArray *array, int dim, size_t *idx,
 
 static int compute_max_width(const ndArray *array) {
     int ndim = get_ndim(array);
-    size_t idx[ndim];
+    size_t idx[MAX_NDIM];
     int max_width = 0;
 
     for (int d = 0; d < ndim; ++d)
@@ -171,7 +171,7 @@ void print_array(const ndArray *array, int base_indent) {
         return;
     }
 
-    size_t idx[get_ndim(array)];
+    size_t idx[MAX_NDIM];
 
     for (int d = 0; d < get_ndim(array); d++) {
         idx[d] = 0;
@@ -231,7 +231,7 @@ void print_grad_fn(const Tensor *tensor) {
         return;
     }
 
-    printf("<%s at %p>\n", get_backward_name(backward_fn), backward_fn);
+    printf("<%s at %p>\n", get_backward_name(backward_fn), (void *)backward_fn);
 }
 
 void print_next_functions(const BackwardFn *backward_fn) {
@@ -241,7 +241,7 @@ void print_next_functions(const BackwardFn *backward_fn) {
     printf("(");
     for (size_t i = 0; i < num_functions; i++) {
         printf("<%s at %p>", get_backward_name(next_functions[i]),
-               next_functions[i]);
+               (void *)next_functions[i]);
         if (i < num_functions - 1)
             printf(", ");
     }

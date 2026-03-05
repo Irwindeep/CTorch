@@ -6,11 +6,11 @@
 
 PRNG *global_rng;
 
-void CTorchInit() { global_rng = rng_init(time(NULL)); }
+void CTorchInit(void) { global_rng = rng_init((uint64_t)time(NULL)); }
 
 void ManualSeed(uint64_t seed) {
     free_rng(global_rng);
     global_rng = rng_init(seed);
 }
 
-void CTorchClose() { free_rng(global_rng); };
+void CTorchClose(void) { free_rng(global_rng); }

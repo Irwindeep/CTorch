@@ -7,7 +7,7 @@
 Tensor *tensor_transpose(Tensor *tensor, int *dims) {
     int ndim = get_tensor_ndim(tensor);
 
-    int _dims[ndim];
+    int _dims[MAX_NDIM];
     if (!dims) {
         for (int d = 0; d < ndim; d++)
             _dims[d] = ndim - d - 1;
@@ -38,7 +38,7 @@ Tensor *tensor_transpose(Tensor *tensor, int *dims) {
 Tensor *tensor_transpose_env(Tensor *tensor, int *dims, Environment *env) {
     int ndim = get_tensor_ndim(tensor);
 
-    int _dims[ndim];
+    int _dims[MAX_NDIM];
     if (!dims) {
         for (int d = 0; d < ndim; d++)
             _dims[d] = ndim - d - 1;

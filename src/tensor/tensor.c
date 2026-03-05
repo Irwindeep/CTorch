@@ -19,7 +19,7 @@ struct Tensor {
 };
 
 struct TensorHeader {
-    char magic[8]; // "C-TENSOR"
+    char magic[9]; // "C-TENSOR"
     uint32_t dtype;
     uint32_t ndim;
     uint64_t buffer_elems;
@@ -117,14 +117,14 @@ Tensor *load_tensor(const char *path, bool requires_grad, Environment *env) {
     uint64_t total_elems = header.buffer_elems;
     DType dtype = (DType)header.dtype;
 
-    size_t shape[ndim], strides[ndim];
-    for (uint32_t d = 0; d < ndim; d++) {
+    size_t shape[MAX_NDIM], strides[MAX_NDIM];
+    for (uint32_t d = 0; d < (uint32_t)ndim; d++) {
         uint64_t dim;
         fread(&dim, sizeof(uint64_t), 1, file);
         shape[d] = (size_t)dim;
     }
 
-    for (uint32_t d = 0; d < ndim; d++) {
+    for (uint32_t d = 0; d < (uint32_t)ndim; d++) {
         uint64_t stride;
         fread(&stride, sizeof(uint64_t), 1, file);
         strides[d] = (size_t)stride;
@@ -253,7 +253,7 @@ Tensor *ones_like(const Tensor *tensor, bool requires_grad, Environment *env) {
 
 Tensor *scalar(ArrayVal value, DType dtype, bool requires_grad,
                Environment *env) {
-    ndArray *data = array_init(0, (const size_t[]){}, dtype);
+    ndArray *data = array_init(0, (const size_t[]){0}, dtype);
     set_value(data, NULL, value);
 
     Tensor *tensor = tensor_init(data, requires_grad, env);

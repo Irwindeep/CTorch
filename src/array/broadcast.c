@@ -41,8 +41,7 @@ void broadcast_shape(const size_t *shape1, const size_t *shape2, size_t *shape,
 }
 
 void broadcasted_strides(size_t *strides, const size_t *src_strides,
-                         const size_t *src_shape, int src_ndim,
-                         const size_t *dst_shape, int dst_ndim) {
+                         const size_t *src_shape, int src_ndim, int dst_ndim) {
     int dim = dst_ndim - src_ndim;
 
     for (int i = 0; i < dst_ndim; i++) {

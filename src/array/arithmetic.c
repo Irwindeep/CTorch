@@ -134,17 +134,17 @@ static ndArray *array_binary_op(ndArray *arr1, ndArray *arr2,
     dtype = dtype1;
 
     size_t *shape1 = get_shape(arr1), *shape2 = get_shape(arr2);
-    size_t shape[ndim];
+    size_t shape[MAX_NDIM];
     broadcast_shape(shape1, shape2, shape, ndim1, ndim2, ndim);
     ndArray *result = array_init(ndim, shape, dtype);
 
     size_t *strides1 = get_strides(arr1), *strides2 = get_strides(arr2);
     const size_t *strides = get_strides(result);
 
-    size_t b_strides1[ndim], b_strides2[ndim], sC[ndim];
+    size_t b_strides1[MAX_NDIM], b_strides2[MAX_NDIM], sC[MAX_NDIM];
 
-    broadcasted_strides(b_strides1, strides1, shape1, ndim1, shape, ndim);
-    broadcasted_strides(b_strides2, strides2, shape2, ndim2, shape, ndim);
+    broadcasted_strides(b_strides1, strides1, shape1, ndim1, ndim);
+    broadcasted_strides(b_strides2, strides2, shape2, ndim2, ndim);
 
     size_t total_size = get_total_size(result);
     size_t itemsize = get_itemsize(result);
@@ -335,7 +335,7 @@ ndArray *array_sum(ndArray *array) {
     DType dtype = get_dtype(array);
     size_t total_size = get_total_size(array);
 
-    ndArray *result = array_init(0, (size_t[]){}, dtype);
+    ndArray *result = array_init(0, (size_t[]){0}, dtype);
 
     switch (dtype) {
     case DTYPE_INT: {
@@ -368,9 +368,9 @@ ndArray *array_sum(ndArray *array) {
 }
 
 #define _ARRAY_SUM_DIM_KERNEL(T, NAME)                                          \
-    static void NAME(const T *restrict A, T *restrict B, int ndimA, int ndimB,  \
-                     int dim, bool keepdims, const size_t *shapeA,              \
-                     const size_t *stridesA, size_t total_sizeB) {              \
+    static void NAME(const T *restrict A, T *restrict B, int ndimA, int dim,    \
+                     const size_t *shapeA, const size_t *stridesA,              \
+                     size_t total_sizeB) {                                      \
         if (total_sizeB == 0)                                                   \
             return;                                                             \
                                                                                 \
@@ -452,7 +452,7 @@ ndArray *array_sum_dim(ndArray *array, int dim, bool keepdims) {
     DType dtype = get_dtype(array);
 
     int new_ndim = keepdims ? ndim : ndim - 1;
-    size_t new_shape[new_ndim];
+    size_t new_shape[MAX_NDIM];
 
     int j = 0;
     for (int i = 0; i < ndim; i++) {
@@ -469,7 +469,7 @@ ndArray *array_sum_dim(ndArray *array, int dim, bool keepdims) {
     size_t totalB = get_total_size(result), itemsize = get_itemsize(array);
     const size_t *strides = get_strides(array);
 
-    size_t stridesA[ndim];
+    size_t stridesA[MAX_NDIM];
     for (int i = 0; i < ndim; i++)
         stridesA[i] = strides[i] / itemsize;
 
@@ -477,29 +477,25 @@ ndArray *array_sum_dim(ndArray *array, int dim, bool keepdims) {
     case DTYPE_INT: {
         const int *A = get_array_data(array);
         int *B = get_array_data(result);
-        _array_sum_dim_i(A, B, ndim, new_ndim, dim, keepdims, shape, stridesA,
-                         totalB);
+        _array_sum_dim_i(A, B, ndim, dim, shape, stridesA, totalB);
         break;
     }
     case DTYPE_FLOAT: {
         const float *A = get_array_data(array);
         float *B = get_array_data(result);
-        _array_sum_dim_f(A, B, ndim, new_ndim, dim, keepdims, shape, stridesA,
-                         totalB);
+        _array_sum_dim_f(A, B, ndim, dim, shape, stridesA, totalB);
         break;
     }
     case DTYPE_DOUBLE: {
         const double *A = get_array_data(array);
         double *B = get_array_data(result);
-        _array_sum_dim_d(A, B, ndim, new_ndim, dim, keepdims, shape, stridesA,
-                         totalB);
+        _array_sum_dim_d(A, B, ndim, dim, shape, stridesA, totalB);
         break;
     }
     case DTYPE_LONG: {
         const long int *A = get_array_data(array);
         long int *B = get_array_data(result);
-        _array_sum_dim_l(A, B, ndim, new_ndim, dim, keepdims, shape, stridesA,
-                         totalB);
+        _array_sum_dim_l(A, B, ndim, dim, shape, stridesA, totalB);
         break;
     }
     }

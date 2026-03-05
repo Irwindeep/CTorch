@@ -51,14 +51,17 @@ ndArray *array_init(int ndim, const size_t *shape, DType dtype) {
     case DTYPE_LONG:
         itemsize = sizeof(long);
         break;
+    default:
+        itemsize = sizeof(float);
+        break;
     }
 
     array->itemsize = itemsize;
-    array->shape = malloc(ndim * sizeof(size_t));
-    array->strides = malloc(ndim * sizeof(size_t));
+    array->shape = malloc((size_t)ndim * sizeof(size_t));
+    array->strides = malloc((size_t)ndim * sizeof(size_t));
 
     size_t size = 1;
-    for (size_t i = ndim; i-- > 0;) {
+    for (int i = ndim; i-- > 0;) {
         array->shape[i] = shape[i];
         array->strides[i] = size * itemsize;
         size = size * shape[i];
@@ -150,7 +153,7 @@ void set_value(ndArray *array, const size_t *indices, ArrayVal value) {
 }
 
 void set_strides(ndArray *array, const size_t *strides) {
-    memcpy(array->strides, strides, array->ndim * sizeof(size_t));
+    memcpy(array->strides, strides, (size_t)array->ndim * sizeof(size_t));
 }
 
 void populate_array(ndArray *array, const void *data) {
@@ -219,7 +222,7 @@ ndArray *eye(size_t m, size_t n, DType dtype) {
 
 ndArray *zeros(int ndim, const size_t *shape, DType dtype) {
     ndArray *array = array_init(ndim, shape, dtype);
-    size_t indices[ndim];
+    size_t indices[MAX_NDIM];
 
     ArrayVal zero = array_val_zero(array->dtype);
     size_t total_size = array->total_size;
@@ -233,7 +236,7 @@ ndArray *zeros(int ndim, const size_t *shape, DType dtype) {
 
 ndArray *ones(int ndim, const size_t *shape, DType dtype) {
     ndArray *array = array_init(ndim, shape, dtype);
-    size_t indices[ndim];
+    size_t indices[MAX_NDIM];
 
     ArrayVal one = array_val_one(array->dtype);
     size_t total_size = array->total_size;
@@ -251,7 +254,7 @@ bool array_equal(const ndArray *arr1, const ndArray *arr2) {
 
     DType dtype = arr1->dtype;
     int ndim = arr1->ndim;
-    size_t idx[ndim];
+    size_t idx[MAX_NDIM];
 
     for (int i = 0; i < ndim; i++) {
         if (arr1->shape[i] != arr2->shape[i])
