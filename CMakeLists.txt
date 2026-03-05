@@ -4,18 +4,6 @@ project(CTorch LANGUAGES C Fortran)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_BUILD_TYPE Release)
 
-if(NOT DEFINED CMAKE_TOOLCHAIN_FILE)
-  if(DEFINED ENV{VCPKG_ROOT})
-    set(CMAKE_TOOLCHAIN_FILE
-        "$ENV{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
-        CACHE STRING "Vcpkg toolchain file")
-  else()
-    message(
-      FATAL_ERROR
-        "VCPKG_ROOT not set. Please set it to your vcpkg installation.")
-  endif()
-endif()
-
 option(BUILD_TESTING "Enable building tests" ON)
 
 set(CMAKE_C_STANDARD 11)
@@ -28,33 +16,64 @@ find_library(M_LIB m)
 file(GLOB_RECURSE CTORCH_SOURCES CONFIGURE_DEPENDS
      "${CMAKE_CURRENT_SOURCE_DIR}/src/*.c")
 
-add_library(ctorch SHARED)
-target_sources(ctorch PRIVATE ${CTORCH_SOURCES})
+# Core library
+
+add_library(ctorch SHARED ${CTORCH_SOURCES})
 
 target_include_directories(
   ctorch PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
                 $<INSTALL_INTERFACE:include>)
 
 target_link_libraries(ctorch PUBLIC OpenMP::OpenMP_C OpenBLAS::OpenBLAS)
+
 if(M_LIB)
   target_link_libraries(ctorch PUBLIC ${M_LIB})
 endif()
 
+# Vision library
+
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(VIPS REQUIRED IMPORTED_TARGET vips)
+
+file(GLOB_RECURSE CTORCH_VISION_SOURCES CONFIGURE_DEPENDS
+     "${CMAKE_CURRENT_SOURCE_DIR}/modules/vision/*.c")
+
+add_library(ctorchvision SHARED ${CTORCH_VISION_SOURCES})
+
+target_include_directories(
+  ctorchvision PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+                      $<INSTALL_INTERFACE:include>)
+
+target_link_libraries(ctorchvision PUBLIC ctorch OpenMP::OpenMP_C
+                                          PkgConfig::VIPS)
+
+# Compile flags
+
+add_library(ctorch_warnings INTERFACE)
+
 target_compile_options(
-  ctorch
-  PRIVATE -Wall
-          -Wextra
-          -Wpedantic
-          -Wshadow
-          -Wconversion
-          -Wsign-conversion
-          -Wformat=2
-          -Wvla
-          -Wnull-dereference
-          -Wdouble-promotion
-          -O3
-          -march=native
-          -ffast-math)
+  ctorch_warnings
+  INTERFACE -Wall
+            -Wextra
+            -Wpedantic
+            -Wshadow
+            -Wconversion
+            -Wsign-conversion
+            -Wformat=2
+            -Wvla
+            -Wnull-dereference
+            -Wdouble-promotion)
+
+target_link_libraries(ctorch PRIVATE ctorch_warnings)
+target_link_libraries(ctorchvision PRIVATE ctorch_warnings)
+
+# Main executable
+
+add_executable(main main.c)
+target_link_libraries(main PRIVATE ctorch ctorchvision)
+target_compile_options(main PUBLIC -O3 -march=native)
+
+# Tests
 
 if(BUILD_TESTING)
   add_subdirectory(tests)
