@@ -44,7 +44,7 @@ print_tensor(get_tensor_grad(b));
 - [x] Autograd for tensor arithmetic
 - [x] Backpropagation loop
 - [x] Random tensor initialization
-- [ ] Remove VLAs
+- [x] Remove VLAs
 - [ ] Shallow copy of tensors
 - [ ] Stack trace for error handling
 - [ ] Transpose as a member of tensor
