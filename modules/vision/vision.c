@@ -12,6 +12,13 @@ struct Image {
 void VisionInit(void) { VIPS_INIT("ctorchvision"); }
 void VisionClose(void) { vips_shutdown(); }
 
+Image *image_init(void *image) {
+    Image *output = malloc(sizeof(Image));
+    output->base = image;
+
+    return output;
+}
+
 Image *load_image(const char *path) {
     VipsImage *image = vips_image_new_from_file(path, NULL);
     if (!image)
