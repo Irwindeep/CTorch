@@ -30,6 +30,7 @@ struct Transform {
     size_t num_transforms;
 };
 
+Transform *Grayscale(int num_channels);
 Transform *Resize(size_t height, size_t width);
 Transform *ToTensor(Environment *env);
 Transform *_Compose(size_t num_transforms, Transform **transforms);
