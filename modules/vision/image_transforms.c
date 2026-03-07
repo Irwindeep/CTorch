@@ -113,7 +113,7 @@ void *random_rotation(Transform *transform, Image *input) {
 
     Tensor *t = uniform(0, (const size_t[]){0}, _transform->degrees,
                         DTYPE_DOUBLE, NO_GRAD, NULL);
-    double angle = ((double *)get_array_data(get_tensor_data(t)))[0];
+    double angle = item(t).double_val;
 
     VipsImage *output;
     vips_similarity(image, &output, "angle", angle, NULL);
