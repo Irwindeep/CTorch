@@ -37,6 +37,29 @@ static void print_indent(int n) {
         putchar(' ');
 }
 
+static void trim_trailing_zeros(char *s) {
+    char *dot = strchr(s, '.');
+    if (!dot)
+        return;
+
+    char *end = s + strlen(s) - 1;
+    while (end > dot && *end == '0')
+        *end-- = '\0';
+}
+
+static int format_float_like(char *buf, size_t n, double x) {
+    double ax = fabs(x);
+    char tmp[64];
+
+    if ((ax != 0.0 && ax < 1e-4) || ax >= 1e6) {
+        return snprintf(buf, n, "%.4e", x);
+    }
+
+    snprintf(tmp, sizeof(tmp), "%.4f", x);
+    trim_trailing_zeros(tmp);
+    return snprintf(buf, n, "%s", tmp);
+}
+
 static int format_value(char *buf, size_t n, const ndArray *array,
                         const size_t *idx) {
     ArrayVal v = get_value(array, idx);
@@ -46,21 +69,12 @@ static int format_value(char *buf, size_t n, const ndArray *array,
         return snprintf(buf, n, "%d", v.int_val);
     case DTYPE_LONG:
         return snprintf(buf, n, "%ld", v.long_val);
-    case DTYPE_FLOAT: {
-        double x = (double)v.float_val;
-        double ax = fabs(x);
-        if ((ax != 0.0 && ax < 1e-4) || ax >= 1e6)
-            return snprintf(buf, n, "%.4e", x);
-        return snprintf(buf, n, "%.4f", x);
+    case DTYPE_FLOAT:
+        return format_float_like(buf, n, (double)v.float_val);
+    case DTYPE_DOUBLE:
+        return format_float_like(buf, n, v.double_val);
     }
-    case DTYPE_DOUBLE: {
-        double x = v.double_val;
-        double ax = fabs(x);
-        if ((ax != 0.0 && ax < 1e-4) || ax >= 1e6)
-            return snprintf(buf, n, "%.4e", x);
-        return snprintf(buf, n, "%.4f", x);
-    }
-    }
+
     return 0;
 }
 
