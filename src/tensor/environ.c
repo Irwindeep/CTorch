@@ -101,6 +101,12 @@ void open_lock(Environment *env) { env->lock = false; }
 
 Environment *resolve_environ(Tensor *t1, Tensor *t2) {
     Environment *env1 = get_tensor_environ(t1), *env2 = get_tensor_environ(t2);
+    if (!env1 && !env2)
+        return NULL;
+    if (!env1)
+        return env2;
+    if (!env2)
+        return env1;
 
     if (env1->lock) {
         if (env2->lock)
