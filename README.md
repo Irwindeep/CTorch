@@ -47,6 +47,7 @@ print_tensor(get_tensor_grad(b));
 - [x] Remove VLAs
 - [ ] Shallow copy of tensors
 - [ ] Stack trace for error handling
+- [ ] Improved error handling
 - [ ] Transpose as a member of tensor
 - [ ] Tensor backward hooks
 - [ ] nn Modules
