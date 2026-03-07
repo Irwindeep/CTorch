@@ -1,6 +1,7 @@
 #include "tensor.h"
 #include "array.h"
 #include "autograd.h"
+#include "ctorch.h"
 #include "error_codes.h"
 
 #include <stdbool.h>

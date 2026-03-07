@@ -1,4 +1,5 @@
 #include "array.h"
+#include "ctorch.h"
 #include "error_codes.h"
 #include "nn.h"
 #include "random.h"

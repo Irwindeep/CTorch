@@ -1,5 +1,6 @@
 #include "tensor_tests.h"
 #include "array.h"
+#include "ctorch.h"
 #include "tensor.h"
 
 #include <CUnit/CUnit.h>

@@ -1,17 +1,10 @@
 #ifndef ARRAY_H
 #define ARRAY_H
 
+#include "ctorch.h"
+
 #include <stdbool.h>
 #include <stddef.h>
-
-typedef enum DType {
-    DTYPE_INT,
-    DTYPE_FLOAT,
-    DTYPE_DOUBLE,
-    DTYPE_LONG,
-} DType;
-
-extern const char *DTypeNames[];
 
 typedef union ArrayVal {
     int int_val;

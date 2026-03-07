@@ -1,4 +1,5 @@
 #include "array.h"
+#include "ctorch.h"
 #include "ops.h"
 
 #include <cblas.h>

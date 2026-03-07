@@ -2,14 +2,10 @@
 #define TENSOR_H
 
 #include "array.h"
+#include "ctorch.h"
+
 #include <stdbool.h>
 #include <stddef.h>
-
-#define REQUIRES_GRAD true
-#define NO_GRAD false
-
-#define CREATE_GRAPH true
-#define NO_GRAPH false
 
 typedef struct Environment Environment;
 typedef struct Tensor Tensor;
@@ -90,36 +86,5 @@ Tensor *tensor_ge(Tensor *t1, Tensor *t2);
 Tensor *tensor_lt(Tensor *t1, Tensor *t2);
 Tensor *tensor_le(Tensor *t1, Tensor *t2);
 Tensor *tensor_eq(Tensor *t1, Tensor *t2);
-
-#define SHAPE(...)                                                             \
-    (sizeof((size_t[]){__VA_ARGS__}) / sizeof(size_t)),                        \
-        ((const size_t[]){__VA_ARGS__})
-
-#define SHAPE_(...) ((const size_t[]){__VA_ARGS__})
-
-#define TENSORS(...)                                                           \
-    (sizeof((Tensor *[]){__VA_ARGS__}) / sizeof(Tensor *)),                    \
-        ((Tensor *[]){__VA_ARGS__})
-
-#define TENSORS_(...) ((Tensor *[]){__VA_ARGS__})
-
-#define SCALAR_VAL(x)                                                          \
-    _Generic((x),                                                              \
-        int: (ArrayVal){.int_val = (x)},                                       \
-        float: (ArrayVal){.float_val = (x)},                                   \
-        double: (ArrayVal){.double_val = (x)},                                 \
-        long: (ArrayVal){.long_val = (x)})
-
-#define SCALAR_DTYPE(x)                                                        \
-    _Generic((x),                                                              \
-        int: DTYPE_INT,                                                        \
-        float: DTYPE_FLOAT,                                                    \
-        double: DTYPE_DOUBLE,                                                  \
-        long: DTYPE_LONG)
-
-#define SCALAR_G(x, env)                                                       \
-    scalar(SCALAR_VAL(x), SCALAR_DTYPE(x), REQUIRES_GRAD, (env))
-
-#define SCALAR_NG(x, env) scalar(SCALAR_VAL(x), SCALAR_DTYPE(x), NO_GRAD, (env))
 
 #endif // !TENSOR_H

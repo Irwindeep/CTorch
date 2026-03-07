@@ -1,7 +1,7 @@
 #ifndef RANDOM_H
 #define RANDOM_H
 
-#include "array.h"
+#include "ctorch.h"
 #include "tensor.h"
 
 #include <stddef.h>

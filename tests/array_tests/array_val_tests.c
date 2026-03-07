@@ -1,5 +1,7 @@
 #include "array.h"
 #include "array_tests.h"
+#include "ctorch.h"
+
 #include <CUnit/CUnit.h>
 
 void test_array_val_one() {

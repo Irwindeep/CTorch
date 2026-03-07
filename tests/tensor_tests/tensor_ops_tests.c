@@ -1,5 +1,6 @@
 #include "array.h"
 #include "autograd.h"
+#include "ctorch.h"
 #include "tensor.h"
 #include "tensor_tests.h"
 

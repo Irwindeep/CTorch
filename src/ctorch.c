@@ -5,6 +5,12 @@
 #include <time.h>
 
 PRNG *global_rng;
+const char *DTypeNames[] = {
+    "DTYPE_INT",
+    "DTYPE_FLOAT",
+    "DTYPE_DOUBLE",
+    "DTYPE_LONG",
+};
 
 void CTorchInit(void) { global_rng = rng_init((uint64_t)time(NULL)); }
 

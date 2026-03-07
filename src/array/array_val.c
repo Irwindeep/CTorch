@@ -1,4 +1,6 @@
 #include "array.h"
+#include "ctorch.h"
+
 #include <stdbool.h>
 #include <stdio.h>
 

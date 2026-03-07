@@ -1,5 +1,6 @@
 #include "array.h"
 #include "array_tests.h"
+#include "ctorch.h"
 
 #include <CUnit/CUnit.h>
 #include <stddef.h>

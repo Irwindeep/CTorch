@@ -1,5 +1,6 @@
 #include "random.h"
 #include "array.h"
+#include "ctorch.h"
 #include "error_codes.h"
 #include "tensor.h"
 

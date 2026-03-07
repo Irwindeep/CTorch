@@ -1,4 +1,5 @@
 #include "array.h"
+#include "ctorch.h"
 #include "error_codes.h"
 
 #include <stdbool.h>
@@ -6,13 +7,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-const char *DTypeNames[] = {
-    "DTYPE_INT",
-    "DTYPE_FLOAT",
-    "DTYPE_DOUBLE",
-    "DTYPE_LONG",
-};
 
 struct ndArray {
     void *data;
