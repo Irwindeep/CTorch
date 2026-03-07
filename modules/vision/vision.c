@@ -30,6 +30,11 @@ Image *load_image(const char *path) {
     return output;
 }
 
+void save_image(Image *image, const char *path) {
+    VipsImage *img = *(VipsImage **)image;
+    vips_image_write_to_file(img, path, NULL);
+}
+
 void free_image(Image *image) {
     g_object_unref(image->base);
     free(image);

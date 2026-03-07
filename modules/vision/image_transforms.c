@@ -1,13 +1,13 @@
+#include "array.h"
 #include "error_codes.h"
+#include "random.h"
+#include "tensor.h"
+
 #include "vision/transforms.h"
 #include "vision/vision.h"
 
-#include "array.h"
-#include "tensor.h"
-
 #include <stddef.h>
 #include <stdlib.h>
-#include <unistd.h>
 #include <vips/vips.h>
 
 typedef struct _Grayscale {
@@ -98,6 +98,54 @@ Transform *Resize(size_t height, size_t width) {
 
     transform->height = height;
     transform->width = width;
+    return &transform->transform;
+}
+
+typedef struct _RandomRotation {
+    Transform transform;
+    float degrees;
+    bool expand;
+} _RandomRotation;
+
+void *random_rotation(Transform *transform, Image *input) {
+    _RandomRotation *_transform = (_RandomRotation *)transform;
+    VipsImage *image = *(VipsImage **)input;
+
+    Tensor *t = uniform(0, (const size_t[]){0}, _transform->degrees,
+                        DTYPE_DOUBLE, NO_GRAD, NULL);
+    double angle = ((double *)get_array_data(get_tensor_data(t)))[0];
+
+    VipsImage *output;
+    vips_similarity(image, &output, "angle", angle, NULL);
+
+    if (!_transform->expand) {
+        VipsImage *tmp = output;
+        int width = vips_image_get_width(image),
+            height = vips_image_get_height(image);
+
+        int left = (vips_image_get_width(tmp) - width) / 2,
+            top = (vips_image_get_height(tmp) - height) / 2;
+
+        vips_crop(tmp, &output, left, top, width, height, NULL);
+
+        g_object_unref(tmp);
+    }
+
+    free_image(input);
+    free_tensor(t);
+
+    Image *out = image_init(output);
+    return out;
+}
+
+Transform *RandomRotation(float degrees, bool expand) {
+    _RandomRotation *transform = calloc(1, sizeof(_RandomRotation));
+
+    transform->transform.func_type = ImageFunc;
+    transform->transform.func.image_fn = random_rotation;
+
+    transform->degrees = degrees;
+    transform->expand = expand;
     return &transform->transform;
 }
 
