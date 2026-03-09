@@ -187,6 +187,11 @@ void set_backward_fn(Tensor *tensor, BackwardFn *backward_fn) {
     tensor->backward_fn = backward_fn;
 }
 
+void set_tensor_environ(Tensor *tensor, Environment *env) {
+    tensor->env = env;
+    env_push(env, tensor);
+}
+
 void zero_grad(Tensor *tensor) {
     int ndim = get_ndim(tensor->data);
     const size_t *shape = get_shape(tensor->data);

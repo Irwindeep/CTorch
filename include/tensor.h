@@ -50,6 +50,7 @@ void set_requires_grad(Tensor *tensor, bool requires_grad);
 void replace_tensor_data(Tensor *tensor, ndArray *data);
 void set_tensor_grad(Tensor *tensor, Tensor *grad);
 void set_backward_fn(Tensor *tensor, BackwardFn *backward_fn);
+void set_tensor_environ(Tensor *tensor, Environment *env);
 
 void zero_grad(Tensor *tensor);
 
