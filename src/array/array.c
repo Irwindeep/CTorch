@@ -16,6 +16,7 @@ struct ndArray {
     size_t itemsize;
     size_t total_size;
     DType dtype;
+    bool is_view;
 };
 
 ndArray *array_init(int ndim, const size_t *shape, DType dtype) {
@@ -62,12 +63,15 @@ ndArray *array_init(int ndim, const size_t *shape, DType dtype) {
     }
     array->data = malloc(size * itemsize);
     array->total_size = size;
+    array->is_view = false;
 
     return array;
 }
 
 void free_array(ndArray *array) {
-    free(array->data);
+    if (!array->is_view)
+        free(array->data);
+
     free(array->shape);
     free(array->strides);
     free(array);
@@ -172,11 +176,22 @@ size_t index_to_offset(const size_t *idx, const size_t *strides, int ndim) {
 
 ndArray *copy_array(const ndArray *array) {
     int ndim = array->ndim;
-    const size_t *shape = array->shape;
-    DType dtype = array->dtype;
 
-    ndArray *new_arr = array_init(ndim, shape, dtype);
-    populate_array(new_arr, array->data);
+    ndArray *new_arr = malloc(sizeof(ndArray));
+
+    new_arr->dtype = array->dtype;
+    new_arr->ndim = ndim;
+
+    new_arr->itemsize = array->itemsize;
+    new_arr->shape = malloc((size_t)ndim * sizeof(size_t));
+    new_arr->strides = malloc((size_t)ndim * sizeof(size_t));
+
+    memcpy(new_arr->shape, array->shape, (size_t)ndim * sizeof(size_t));
+    memcpy(new_arr->strides, array->strides, (size_t)ndim * sizeof(size_t));
+
+    new_arr->data = array->data;
+    new_arr->total_size = array->total_size;
+    new_arr->is_view = true;
 
     return new_arr;
 }
