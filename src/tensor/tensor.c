@@ -175,9 +175,11 @@ void replace_tensor_data(Tensor *tensor, ndArray *data) {
 void set_tensor_grad(Tensor *tensor, Tensor *grad) {
     if (tensor->grad) {
         Environment *env = tensor->grad->env;
-        bool removed = env_remove_and_free(env, tensor->grad);
+        bool removed = env_remove(env, tensor->grad);
         if (!removed)
             RUNTIME_ERROR(INVALID_GRAD, "Gradient not found in envment");
+
+        free_tensor(tensor->grad);
     }
 
     tensor->grad = grad;

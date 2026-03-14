@@ -71,14 +71,12 @@ Tensor *env_pop(Environment *env) {
     return tensor;
 }
 
-bool env_remove_and_free(Environment *env, const Tensor *target) {
+bool env_remove(Environment *env, const Tensor *target) {
     if (!env || !target)
         return false;
 
     for (size_t i = 0; i < env->num_tensors; i++) {
         if (env->tensors[i] == target) {
-            free_tensor(env->tensors[i]);
-
             for (size_t j = i + 1; j < env->num_tensors; j++) {
                 env->tensors[j - 1] = env->tensors[j];
             }

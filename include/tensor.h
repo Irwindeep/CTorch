@@ -16,7 +16,7 @@ void free_env(Environment **env);
 
 void env_push(Environment *env, Tensor *tensor);
 Tensor *env_pop(Environment *env);
-bool env_remove_and_free(Environment *env, const Tensor *target);
+bool env_remove(Environment *env, const Tensor *target);
 
 Tensor **get_tensors(const Environment *env);
 size_t get_num_tensors(const Environment *env);
