@@ -1,18 +1,26 @@
 #ifndef AUTOGRAD_H
 #define AUTOGRAD_H
 
+#include "array.h"
 #include "tensor.h"
 #include <stddef.h>
 
 typedef enum Ctx {
     NULL_CTX,
     TRANSPOSE_CTX,
+    SLICE_CTX,
 } Ctx;
 
 typedef struct TransposeCtx {
     int ndim;
     int *dims;
 } TransposeCtx;
+
+typedef struct SliceCtx {
+    int ndim;
+    char *slice_str;
+    Slice *slices;
+} SliceCtx;
 
 void *deep_copy_ctx(void *ctx, Ctx ctx_kind);
 void free_ctx(void *ctx, Ctx ctx_kind);
@@ -63,5 +71,8 @@ _DECLARE_BACKWARD_FN(SumBackward)
 
 _DECLARE_BACKWARD_FN(MaxBackward)
 _DECLARE_BACKWARD_FN(MinBackward)
+
+_DECLARE_BACKWARD_FN(SelectBackward)
+_DECLARE_BACKWARD_FN(ScatterAddBackward)
 
 #endif // !AUTOGRAD_H

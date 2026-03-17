@@ -1,5 +1,7 @@
+#include "array.h"
 #include "autograd.h"
 #include "error_codes.h"
+
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
@@ -25,6 +27,19 @@ void *deep_copy_ctx(void *ctx, Ctx ctx_kind) {
 
         return ctx_copy;
     }
+    case SLICE_CTX: {
+        SliceCtx *ctx_copy = malloc(sizeof(SliceCtx));
+        if (!ctx_copy)
+            RUNTIME_ERROR(ARRAY_INIT_FAILURE, "Failure to allocate Context");
+
+        ctx_copy->ndim = ((SliceCtx *)ctx)->ndim;
+        ctx_copy->slices = malloc((size_t)ctx_copy->ndim * sizeof(Slice));
+        memcpy(ctx_copy->slices, ((SliceCtx *)ctx)->slices,
+               (size_t)ctx_copy->ndim * sizeof(Slice));
+        ctx_copy->slice_str = strdup(((SliceCtx *)ctx)->slice_str);
+
+        return ctx_copy;
+    }
     }
 
     return NULL;
@@ -39,6 +54,13 @@ void free_ctx(void *ctx, Ctx ctx_kind) {
     case TRANSPOSE_CTX: {
         free(((TransposeCtx *)ctx)->dims);
         free(ctx);
+        break;
+    }
+    case SLICE_CTX: {
+        free(((SliceCtx *)ctx)->slices);
+        free(((SliceCtx *)ctx)->slice_str);
+        free(ctx);
+        break;
     }
     }
 }

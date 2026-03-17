@@ -5,6 +5,7 @@
 #include "error_codes.h"
 #include "tensor.h"
 
+#include <linux/limits.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdio.h>
@@ -293,3 +294,59 @@ _ONE_IP_TWO_OP_GRAD_FN(
         t2_grad = tensor_init(data2_grad, NO_GRAD, env);
         free_array(data2_lt_data1);
     }))
+
+_ONE_IP_TWO_OP_GRAD_FN(
+    _scatter_add_grad_fn,
+    BLOCK(BackwardFn *backward_fn = get_backward_fn(tensor);
+          Ctx ctx_kind = get_ctx_kind(backward_fn);
+
+          if (ctx_kind != SLICE_CTX) {
+              RUNTIME_ERRORF(INVALID_BACKWARD_PASS,
+                             "Invalid context kind for `%s`", __func__);
+          } SliceCtx *ctx = (SliceCtx *)get_ctx(backward_fn);
+          char *slice_str = ctx->slice_str;
+
+          t1_grad = tensor_slice(grad, slice_str);),
+    BLOCK(),
+    BLOCK(BackwardFn *backward_fn = get_backward_fn(tensor);
+          Ctx ctx_kind = get_ctx_kind(backward_fn);
+
+          if (ctx_kind != SLICE_CTX) {
+              RUNTIME_ERRORF(INVALID_BACKWARD_PASS,
+                             "Invalid context kind for `%s`", __func__);
+          } SliceCtx *ctx = (SliceCtx *)get_ctx(backward_fn);
+          Slice *slices = ctx->slices;
+          t2_grad = tensor_init(array_slice(grad_data, slices), NO_GRAD, env);),
+    BLOCK())
+
+_DEFINE_GRAD_FN(_select_grad_fn, 1, 1, {
+    Tensor *new_tensor = inputs[0], *grad = input_grads[0];
+    ndArray *grad_data = get_tensor_data(grad);
+
+    BackwardFn *backward_fn = get_backward_fn(new_tensor);
+    Ctx ctx_kind = get_ctx_kind(backward_fn);
+    if (ctx_kind != SLICE_CTX) {
+        RUNTIME_ERRORF(INVALID_BACKWARD_PASS, "Invalid context kind for `%s`",
+                       __func__);
+    }
+    SliceCtx *ctx = (SliceCtx *)get_ctx(backward_fn);
+
+    Environment *env = get_tensor_environ(new_tensor);
+
+    if (create_graph) {
+        char *slice_str = ctx->slice_str;
+        Tensor *tensor_grad = zeros_like(outputs[0], NO_GRAD, env);
+
+        output_grads[0] = tensor_scatter_add(grad, tensor_grad, slice_str);
+    } else {
+        Slice *slices = ctx->slices;
+        int ndim = get_tensor_ndim(outputs[0]);
+        const size_t *shape = get_tensor_shape(outputs[0]);
+        DType dtype = get_tensor_dtype(outputs[0]);
+
+        ndArray *data_grad = zeros(ndim, shape, dtype);
+        scatter_add_slice(grad_data, data_grad, slices);
+
+        output_grads[0] = tensor_init(data_grad, NO_GRAD, env);
+    }
+})

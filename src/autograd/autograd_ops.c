@@ -38,3 +38,6 @@ DEFINE_BACKWARD_FN(MinBackward, _min_grad_fn)
 DEFINE_BACKWARD_FN(TransposeBackward, _transpose_grad_fn)
 DEFINE_BACKWARD_FN(MatMulBackward, _matmul_grad_fn)
 DEFINE_BACKWARD_FN(SumBackward, _sum_grad_fn)
+
+DEFINE_BACKWARD_FN(SelectBackward, _select_grad_fn)
+DEFINE_BACKWARD_FN(ScatterAddBackward, _scatter_add_grad_fn)
