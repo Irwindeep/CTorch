@@ -1,293 +1,53 @@
 #include "array.h"
 #include "ctorch.h"
-#include "error_codes.h"
+#include "kernel/array_binops.h"
 
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 
-#define _ARRAY_OP(T, NAME, OP)                                                 \
-    static void NAME(const T *A, const T *B, T *C, const size_t *sA,           \
-                     const size_t *sB, const size_t *sC, int ndim,             \
-                     size_t total_size, const size_t *shapeC) {                \
-        if (total_size == 0)                                                   \
-            return;                                                            \
-                                                                               \
-        if (ndim == 0) {                                                       \
-            C[0] = OP(A[0], B[0]);                                             \
-            return;                                                            \
-        }                                                                      \
-                                                                               \
-        size_t inner = shapeC[ndim - 1];                                       \
-        size_t outer = total_size / inner;                                     \
-        _Pragma("omp parallel for schedule(static)") for (size_t i = 0;        \
-                                                          i < outer; i++) {    \
-            size_t tmp = i;                                                    \
-            size_t offsetA = 0, offsetB = 0, offsetC = 0;                      \
-            for (int d = ndim - 2; d >= 0; d--) {                              \
-                size_t idx = tmp % shapeC[d];                                  \
-                tmp /= shapeC[d];                                              \
-                offsetA += idx * sA[d];                                        \
-                offsetB += idx * sB[d];                                        \
-                offsetC += idx * sC[d];                                        \
-            }                                                                  \
-            const T *a = A + offsetA;                                          \
-            const T *b = B + offsetB;                                          \
-            T *c = C + offsetC;                                                \
-                                                                               \
-            size_t sa = sA[ndim - 1];                                          \
-            size_t sb = sB[ndim - 1];                                          \
-            size_t sc = sC[ndim - 1];                                          \
-                                                                               \
-            for (size_t j = 0; j < inner; j++) {                               \
-                c[j * sc] = OP(a[j * sa], b[j * sb]);                          \
-            }                                                                  \
-        }                                                                      \
-    }
-
-#define OP_ADD(a, b) ((a) + (b))
-#define OP_SUB(a, b) ((a) - (b))
-#define OP_MUL(a, b) ((a) * (b))
-#define OP_DIV(a, b) ((a) / (b))
-#define OP_MAX(a, b) ((a) > (b) ? (a) : (b))
-#define OP_MIN(a, b) ((a) < (b) ? (a) : (b))
-
-_ARRAY_OP(int, _array_add_i, OP_ADD)
-_ARRAY_OP(float, _array_add_f, OP_ADD)
-_ARRAY_OP(double, _array_add_d, OP_ADD)
-_ARRAY_OP(long int, _array_add_l, OP_ADD)
-
-_ARRAY_OP(int, _array_sub_i, OP_SUB)
-_ARRAY_OP(float, _array_sub_f, OP_SUB)
-_ARRAY_OP(double, _array_sub_d, OP_SUB)
-_ARRAY_OP(long int, _array_sub_l, OP_SUB)
-
-_ARRAY_OP(int, _array_mul_i, OP_MUL)
-_ARRAY_OP(float, _array_mul_f, OP_MUL)
-_ARRAY_OP(double, _array_mul_d, OP_MUL)
-_ARRAY_OP(long int, _array_mul_l, OP_MUL)
-
-_ARRAY_OP(int, _array_div_i, OP_DIV)
-_ARRAY_OP(float, _array_div_f, OP_DIV)
-_ARRAY_OP(double, _array_div_d, OP_DIV)
-_ARRAY_OP(long int, _array_div_l, OP_DIV)
-
-_ARRAY_OP(int, _array_max_i, OP_MAX)
-_ARRAY_OP(float, _array_max_f, OP_MAX)
-_ARRAY_OP(double, _array_max_d, OP_MAX)
-_ARRAY_OP(long int, _array_max_l, OP_MAX)
-
-_ARRAY_OP(int, _array_min_i, OP_MIN)
-_ARRAY_OP(float, _array_min_f, OP_MIN)
-_ARRAY_OP(double, _array_min_d, OP_MIN)
-_ARRAY_OP(long int, _array_min_l, OP_MIN)
-
-#define CAT(a, b) a##b
-
-#define DISPATCH(dtype, func, arr1, arr2, result, b_strides1, b_strides2,      \
-                 strides, ndim, total_size, shape)                             \
-    do {                                                                       \
-        switch (dtype) {                                                       \
-        case DTYPE_INT: {                                                      \
-            const int *A = get_array_data(arr1), *B = get_array_data(arr2);    \
-            int *C = get_array_data(result);                                   \
-            CAT(func, _i)(A, B, C, b_strides1, b_strides2, strides, ndim,      \
-                          total_size, shape);                                  \
-            break;                                                             \
-        }                                                                      \
-        case DTYPE_FLOAT: {                                                    \
-            const float *A = get_array_data(arr1), *B = get_array_data(arr2);  \
-            float *C = get_array_data(result);                                 \
-            CAT(func, _f)(A, B, C, b_strides1, b_strides2, strides, ndim,      \
-                          total_size, shape);                                  \
-            break;                                                             \
-        }                                                                      \
-        case DTYPE_DOUBLE: {                                                   \
-            const double *A = get_array_data(arr1), *B = get_array_data(arr2); \
-            double *C = get_array_data(result);                                \
-            CAT(func, _d)(A, B, C, b_strides1, b_strides2, strides, ndim,      \
-                          total_size, shape);                                  \
-            break;                                                             \
-        }                                                                      \
-        case DTYPE_LONG: {                                                     \
-            const long int *A = get_array_data(arr1),                          \
-                           *B = get_array_data(arr2);                          \
-            long int *C = get_array_data(result);                              \
-            CAT(func, _l)(A, B, C, b_strides1, b_strides2, strides, ndim,      \
-                          total_size, shape);                                  \
-            break;                                                             \
-        }                                                                      \
-        }                                                                      \
-    } while (0);
-
-static ndArray *array_binary_op(ndArray *arr1, ndArray *arr2,
-                                void (*dispatch)(DType, ndArray *, ndArray *,
-                                                 ndArray *, size_t *, size_t *,
-                                                 size_t *, int, size_t,
-                                                 size_t *)) {
-    int ndim1 = get_ndim(arr1), ndim2 = get_ndim(arr2);
-    int ndim = (ndim1 > ndim2) ? ndim1 : ndim2;
-
-    DType dtype1 = get_dtype(arr1), dtype2 = get_dtype(arr2), dtype;
-    if (dtype1 != dtype2)
-        RUNTIME_ERRORF(INVALID_DTYPE, "Dtype mismatch `%s` and `%s`",
-                       DTypeNames[dtype1], DTypeNames[dtype2]);
-    dtype = dtype1;
-
-    size_t *shape1 = get_shape(arr1), *shape2 = get_shape(arr2);
-    size_t shape[MAX_NDIM];
-    broadcast_shape(shape1, shape2, shape, ndim1, ndim2, ndim);
-    ndArray *result = array_init(ndim, shape, dtype);
-
-    size_t *strides1 = get_strides(arr1), *strides2 = get_strides(arr2);
-    const size_t *strides = get_strides(result);
-
-    size_t b_strides1[MAX_NDIM], b_strides2[MAX_NDIM], sC[MAX_NDIM];
-
-    broadcasted_strides(b_strides1, strides1, shape1, ndim1, ndim);
-    broadcasted_strides(b_strides2, strides2, shape2, ndim2, ndim);
-
-    size_t total_size = get_total_size(result);
-    size_t itemsize = get_itemsize(result);
-
-    for (int i = 0; i < ndim; i++) {
-        b_strides1[i] /= itemsize;
-        b_strides2[i] /= itemsize;
-        sC[i] = strides[i] / itemsize;
-    }
-
-    dispatch(dtype, arr1, arr2, result, b_strides1, b_strides2, sC, ndim,
-             total_size, shape);
-
-    return result;
-}
-
-#define DEFINE_DISPATCH_FUNC(name, kernel)                                     \
-    static inline void dispatch_##name(                                        \
-        DType dtype, ndArray *a, ndArray *b, ndArray *c, size_t *s1,           \
-        size_t *s2, size_t *sc, int n, size_t ts, size_t *sh) {                \
-        DISPATCH(dtype, kernel, a, b, c, s1, s2, sc, n, ts, sh);               \
-    }
-
-DEFINE_DISPATCH_FUNC(add, _array_add)
-DEFINE_DISPATCH_FUNC(sub, _array_sub)
-DEFINE_DISPATCH_FUNC(mul, _array_mul)
-DEFINE_DISPATCH_FUNC(div, _array_div)
-DEFINE_DISPATCH_FUNC(max, _array_max)
-DEFINE_DISPATCH_FUNC(min, _array_min)
-
 ndArray *array_add(ndArray *arr1, ndArray *arr2) {
-    return array_binary_op(arr1, arr2, dispatch_add);
+    return array_binop_kernel(arr1, arr2, dispatch_add);
 }
 
 ndArray *array_sub(ndArray *arr1, ndArray *arr2) {
-    return array_binary_op(arr1, arr2, dispatch_sub);
+    return array_binop_kernel(arr1, arr2, dispatch_sub);
 }
 
 ndArray *array_mul(ndArray *arr1, ndArray *arr2) {
-    return array_binary_op(arr1, arr2, dispatch_mul);
+    return array_binop_kernel(arr1, arr2, dispatch_mul);
 }
 
 ndArray *array_div(ndArray *arr1, ndArray *arr2) {
-    return array_binary_op(arr1, arr2, dispatch_div);
+    return array_binop_kernel(arr1, arr2, dispatch_div);
 }
 
 ndArray *array_max(ndArray *arr1, ndArray *arr2) {
-    return array_binary_op(arr1, arr2, dispatch_max);
+    return array_binop_kernel(arr1, arr2, dispatch_max);
 }
 
 ndArray *array_min(ndArray *arr1, ndArray *arr2) {
-    return array_binary_op(arr1, arr2, dispatch_min);
+    return array_binop_kernel(arr1, arr2, dispatch_min);
 }
 
-#define _ARRAY_CMP(T, NAME, OP)                                                \
-    static void NAME(const T *A, const T *B, T *C, const size_t *sA,           \
-                     const size_t *sB, const size_t *sC, int ndim,             \
-                     size_t total_size, const size_t *shapeC) {                \
-        if (total_size == 0)                                                   \
-            return;                                                            \
-                                                                               \
-        if (ndim == 0) {                                                       \
-            C[0] = (A[0] OP B[0]) ? (T)1 : (T)0;                               \
-            return;                                                            \
-        }                                                                      \
-                                                                               \
-        size_t inner = shapeC[ndim - 1];                                       \
-        size_t outer = total_size / inner;                                     \
-        _Pragma("omp parallel for schedule(static)") for (size_t i = 0;        \
-                                                          i < outer; i++) {    \
-            size_t tmp = i;                                                    \
-            size_t offsetA = 0, offsetB = 0, offsetC = 0;                      \
-            for (int d = ndim - 2; d >= 0; d--) {                              \
-                size_t idx = tmp % shapeC[d];                                  \
-                tmp /= shapeC[d];                                              \
-                offsetA += idx * sA[d];                                        \
-                offsetB += idx * sB[d];                                        \
-                offsetC += idx * sC[d];                                        \
-            }                                                                  \
-            const T *a = A + offsetA;                                          \
-            const T *b = B + offsetB;                                          \
-            T *c = C + offsetC;                                                \
-                                                                               \
-            size_t sa = sA[ndim - 1];                                          \
-            size_t sb = sB[ndim - 1];                                          \
-            size_t sc = sC[ndim - 1];                                          \
-                                                                               \
-            for (size_t j = 0; j < inner; j++) {                               \
-                c[j * sc] = (a[j * sa] OP b[j * sb]) ? (T)1 : (T)0;            \
-            }                                                                  \
-        }                                                                      \
-    }
-
-_ARRAY_CMP(int, _array_gt_i, >)
-_ARRAY_CMP(float, _array_gt_f, >)
-_ARRAY_CMP(double, _array_gt_d, >)
-_ARRAY_CMP(long int, _array_gt_l, >)
-
-_ARRAY_CMP(int, _array_ge_i, >=)
-_ARRAY_CMP(float, _array_ge_f, >=)
-_ARRAY_CMP(double, _array_ge_d, >=)
-_ARRAY_CMP(long int, _array_ge_l, >=)
-
-_ARRAY_CMP(int, _array_lt_i, <)
-_ARRAY_CMP(float, _array_lt_f, <)
-_ARRAY_CMP(double, _array_lt_d, <)
-_ARRAY_CMP(long int, _array_lt_l, <)
-
-_ARRAY_CMP(int, _array_le_i, <=)
-_ARRAY_CMP(float, _array_le_f, <=)
-_ARRAY_CMP(double, _array_le_d, <=)
-_ARRAY_CMP(long int, _array_le_l, <=)
-
-_ARRAY_CMP(int, _array_eq_i, ==)
-_ARRAY_CMP(float, _array_eq_f, ==)
-_ARRAY_CMP(double, _array_eq_d, ==)
-_ARRAY_CMP(long int, _array_eq_l, ==)
-
-DEFINE_DISPATCH_FUNC(gt, _array_gt)
-DEFINE_DISPATCH_FUNC(ge, _array_ge)
-DEFINE_DISPATCH_FUNC(lt, _array_lt)
-DEFINE_DISPATCH_FUNC(le, _array_le)
-DEFINE_DISPATCH_FUNC(eq, _array_eq)
-
 ndArray *array_gt(ndArray *arr1, ndArray *arr2) {
-    return array_binary_op(arr1, arr2, dispatch_gt);
+    return array_binop_kernel(arr1, arr2, dispatch_gt);
 }
 
 ndArray *array_ge(ndArray *arr1, ndArray *arr2) {
-    return array_binary_op(arr1, arr2, dispatch_ge);
+    return array_binop_kernel(arr1, arr2, dispatch_ge);
 }
 
 ndArray *array_lt(ndArray *arr1, ndArray *arr2) {
-    return array_binary_op(arr1, arr2, dispatch_lt);
+    return array_binop_kernel(arr1, arr2, dispatch_lt);
 }
 
 ndArray *array_le(ndArray *arr1, ndArray *arr2) {
-    return array_binary_op(arr1, arr2, dispatch_le);
+    return array_binop_kernel(arr1, arr2, dispatch_le);
 }
 
 ndArray *array_eq(ndArray *arr1, ndArray *arr2) {
-    return array_binary_op(arr1, arr2, dispatch_eq);
+    return array_binop_kernel(arr1, arr2, dispatch_eq);
 }
 
 ndArray *negative(ndArray *array) {

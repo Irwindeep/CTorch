@@ -8,8 +8,4 @@
 void matmul_kernel(const ndArray *arr1, const ndArray *arr2, ndArray *result,
                    const size_t *idx1, const size_t *idx2, const size_t *idx);
 
-void array_add_kernel(const ndArray *arr1, const ndArray *arr2, ndArray *result,
-                      const size_t *b_strides1, size_t *b_strides2,
-                      size_t *strides);
-
 #endif // !KERNEL_OPS_H
