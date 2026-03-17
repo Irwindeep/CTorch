@@ -4,6 +4,7 @@
 #include "tensor.h"
 
 #include <stddef.h>
+#include <stdio.h>
 
 typedef enum SplitType {
     TrainSplit,
@@ -17,7 +18,7 @@ typedef struct Buffer {
 } Buffer;
 
 typedef struct Dataset Dataset;
-typedef void *(*__get_item__)(Dataset *dataset, size_t idx);
+typedef void (*__get_item__)(Dataset *dataset, ssize_t idx, void *buffer);
 
 struct Dataset {
     size_t size;
@@ -36,7 +37,7 @@ void dataset_init(Dataset *dataset, __get_item__ __get_item__);
 Dataset *TensorDataset(int num_tensors, Tensor **tensors);
 DataLoader *dataloader_init(Dataset *dataset, size_t batch_size, bool shuffle);
 
-void *get_index(Dataset *dataset, size_t idx);
+void get_index(Dataset *dataset, ssize_t idx, void *buffer);
 
 void free_dataset(Dataset **dataset);
 
