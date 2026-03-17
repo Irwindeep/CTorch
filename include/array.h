@@ -13,6 +13,13 @@ typedef union ArrayVal {
     long int long_val;
 } ArrayVal;
 
+typedef struct Slice {
+    size_t start;
+    size_t end;
+    size_t step;
+    bool is_index;
+} Slice;
+
 #define FLOAT_EQ_TOL 1e-6
 #define DOUBLE_EQ_TOL 1e-9
 
@@ -43,6 +50,10 @@ void *get_array_data(const ndArray *array);
 ArrayVal get_value(const ndArray *array, const size_t *indices);
 void set_value(ndArray *array, const size_t *indices, ArrayVal value);
 void set_strides(ndArray *array, const size_t *strides);
+void set_ndim(ndArray *array, int ndim);
+
+void set_array_data(ndArray *array, void *data);
+void recompute_total_size(ndArray *array);
 
 void populate_array(ndArray *array, const void *data);
 void offset_to_index(size_t offset, size_t *idx, const size_t *shape, int ndim);
@@ -51,6 +62,10 @@ size_t index_to_offset(const size_t *idx, const size_t *strides, int ndim);
 
 ndArray *copy_array(const ndArray *array);
 bool is_array_contiguous(const ndArray *array);
+
+ndArray *array_slice(ndArray *array, const Slice *slices);
+void scatter_add_slice(const ndArray *input, ndArray *output,
+                       const Slice *slices);
 
 ndArray *eye(size_t m, size_t n, DType dtype);
 ndArray *zeros(int ndim, const size_t *shape, DType dtype);

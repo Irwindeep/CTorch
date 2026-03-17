@@ -154,6 +154,18 @@ void set_strides(ndArray *array, const size_t *strides) {
     memcpy(array->strides, strides, (size_t)array->ndim * sizeof(size_t));
 }
 
+void set_ndim(ndArray *array, int ndim) { array->ndim = ndim; }
+
+void set_array_data(ndArray *array, void *data) { array->data = data; }
+
+void recompute_total_size(ndArray *array) {
+    size_t total_size = 1;
+    for (int i = 0; i < array->ndim; i++) {
+        total_size *= array->shape[i];
+    }
+    array->total_size = total_size;
+}
+
 void populate_array(ndArray *array, const void *data) {
     memcpy(array->data, data, array->total_size * array->itemsize);
 }
