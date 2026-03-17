@@ -62,7 +62,8 @@ target_compile_options(
             -Wformat=2
             -Wvla
             -Wnull-dereference
-            -Wdouble-promotion)
+            -Wdouble-promotion
+            -Wno-unused)
 
 target_link_libraries(ctorch PRIVATE ctorch_warnings)
 target_link_libraries(ctorchvision PRIVATE ctorch_warnings)
