@@ -91,7 +91,7 @@ static bool _repeated_dims(const int *dims, int ndim) {
 }
 
 ndArray *transpose(ndArray *array, const int *dims) {
-    ndArray *result = copy_array(array);
+    ndArray *result = shallow_copy_array(array);
     size_t *shape = get_shape(result);
     size_t *strides = get_strides(result);
     int ndim = get_ndim(result);

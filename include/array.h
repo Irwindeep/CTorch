@@ -60,7 +60,7 @@ void offset_to_index(size_t offset, size_t *idx, const size_t *shape, int ndim);
 
 size_t index_to_offset(const size_t *idx, const size_t *strides, int ndim);
 
-ndArray *copy_array(const ndArray *array);
+ndArray *shallow_copy_array(const ndArray *array);
 bool is_array_contiguous(const ndArray *array);
 
 ndArray *array_slice(ndArray *array, const Slice *slices);

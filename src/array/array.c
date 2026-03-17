@@ -186,7 +186,7 @@ size_t index_to_offset(const size_t *idx, const size_t *strides, int ndim) {
     return offset;
 }
 
-ndArray *copy_array(const ndArray *array) {
+ndArray *shallow_copy_array(const ndArray *array) {
     int ndim = array->ndim;
 
     ndArray *new_arr = malloc(sizeof(ndArray));

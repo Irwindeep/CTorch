@@ -119,7 +119,7 @@ Tensor *tensor_scatter_add(Tensor *t1, Tensor *t2, char *slice_str) {
 
     const ndArray *data1 = get_tensor_data(t1), *data2 = get_tensor_data(t2);
 
-    ndArray *data = copy_array(data2);
+    ndArray *data = shallow_copy_array(data2);
     bool requires_grad = get_requires_grad(t1);
     Environment *env = resolve_environ(t1, t2);
 

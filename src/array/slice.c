@@ -8,7 +8,7 @@ ndArray *array_slice(ndArray *array, const Slice *slices) {
     int ndim = get_ndim(array);
     const size_t *shape = get_shape(array), *strides = get_strides(array);
 
-    ndArray *new_array = copy_array(array);
+    ndArray *new_array = shallow_copy_array(array);
     size_t *new_shape = get_shape(new_array),
            *new_strides = get_strides(new_array);
 

@@ -89,12 +89,12 @@ _ONE_IP_TWO_OP_GRAD_FN(
     BLOCK({ t2_grad = broadcast_tensor_grad(grad, t2_ndim, t2_shape); }),
 
     BLOCK({
-        ndArray *data1_grad = copy_array(grad_data);
+        ndArray *data1_grad = shallow_copy_array(grad_data);
         data1_grad = broadcast_grad_data(data1_grad, t1_ndim, t1_shape);
         t1_grad = tensor_init(data1_grad, NO_GRAD, env);
     }),
     BLOCK({
-        ndArray *data2_grad = copy_array(grad_data);
+        ndArray *data2_grad = shallow_copy_array(grad_data);
         data2_grad = broadcast_grad_data(data2_grad, t2_ndim, t2_shape);
         t2_grad = tensor_init(data2_grad, NO_GRAD, env);
     }))

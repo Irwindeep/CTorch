@@ -47,7 +47,7 @@ static inline void _broadcast_grad_fn(Tensor **output_grads, Tensor **inputs,
         t = broadcast_tensor_grad(grad_tensor, ndim, shape);
     } else {
         ndArray *grad = get_tensor_data(grad_tensor);
-        ndArray *data = copy_array(grad);
+        ndArray *data = shallow_copy_array(grad);
 
         data = broadcast_grad_data(data, ndim, shape);
         t = tensor_init(data, false, get_tensor_environ(inputs[0]));
@@ -70,8 +70,8 @@ static inline BackwardFn *BroadcastBackward(Tensor **inputs, Tensor **outputs,
 }
 
 Tensor *broadcast_tensor_grad(Tensor *tensor, int ndim, const size_t *shape) {
-    ndArray *data =
-        broadcast_grad_data(copy_array(get_tensor_data(tensor)), ndim, shape);
+    ndArray *data = broadcast_grad_data(
+        shallow_copy_array(get_tensor_data(tensor)), ndim, shape);
     bool requires_grad = get_requires_grad(tensor);
     Environment *env = get_tensor_environ(tensor);
 
