@@ -26,7 +26,7 @@ bool get_lock(const Environment *env);
 void set_lock(Environment *env);
 void open_lock(Environment *env);
 
-Environment *resolve_environ(Tensor *t1, Tensor *t2);
+Environment *resolve_environ(const Tensor *t1, const Tensor *t2);
 
 Tensor *tensor_init(ndArray *data, bool requires_grad, Environment *env);
 void free_tensor(Tensor *tensor);
@@ -53,6 +53,9 @@ void set_backward_fn(Tensor *tensor, BackwardFn *backward_fn);
 void set_tensor_environ(Tensor *tensor, Environment *env);
 
 void zero_grad(Tensor *tensor);
+
+Tensor *tensor_slice(Tensor *tensor, char *slice_str);
+Tensor *tensor_scatter_add(Tensor *t1, Tensor *t2, char *slice_str);
 
 Tensor *eye_tensor(size_t m, size_t n, DType dtype, bool requires_grad,
                    Environment *env);

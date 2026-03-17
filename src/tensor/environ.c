@@ -97,7 +97,7 @@ bool get_lock(const Environment *env) { return env->lock; }
 void set_lock(Environment *env) { env->lock = true; }
 void open_lock(Environment *env) { env->lock = false; }
 
-Environment *resolve_environ(Tensor *t1, Tensor *t2) {
+Environment *resolve_environ(const Tensor *t1, const Tensor *t2) {
     Environment *env1 = get_tensor_environ(t1), *env2 = get_tensor_environ(t2);
     if (!env1 && !env2)
         return NULL;
