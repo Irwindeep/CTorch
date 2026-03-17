@@ -44,7 +44,7 @@ static void trim_trailing_zeros(char *s) {
 
     char *end = s + strlen(s) - 1;
     while (end > dot && *end == '0')
-        *end-- = '\0';
+        *end-- = ' ';
 }
 
 static int format_float_like(char *buf, size_t n, double x) {
