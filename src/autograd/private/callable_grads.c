@@ -316,7 +316,7 @@ _ONE_IP_TWO_OP_GRAD_FN(
                              "Invalid context kind for `%s`", __func__);
           } SliceCtx *ctx = (SliceCtx *)get_ctx(backward_fn);
           Slice *slices = ctx->slices;
-          t2_grad = tensor_init(array_slice(grad_data, slices), NO_GRAD, env);),
+          t1_grad = tensor_init(array_slice(grad_data, slices), NO_GRAD, env);),
     BLOCK())
 
 _DEFINE_GRAD_FN(_select_grad_fn, 1, 1, {
