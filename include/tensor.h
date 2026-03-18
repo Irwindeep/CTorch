@@ -68,6 +68,7 @@ Tensor *ones_like(const Tensor *tensor, bool requires_grad, Environment *env);
 Tensor *scalar(ArrayVal value, DType dtype, bool requires_grad,
                Environment *env);
 ArrayVal item(const Tensor *tensor);
+Tensor *detach(const Tensor *tensor);
 
 Tensor *tensor_sum(Tensor *tensor);
 

@@ -17,6 +17,7 @@ struct Tensor {
     BackwardFn *backward_fn;
     Environment *env;
     bool requires_grad;
+    bool is_view;
 };
 
 struct TensorHeader {
@@ -45,6 +46,7 @@ Tensor *tensor_init(ndArray *data, bool requires_grad, Environment *env) {
     tensor->backward_fn = NULL;
     tensor->env = env;
     tensor->requires_grad = requires_grad;
+    tensor->is_view = false;
 
     if (env)
         env_push(env, tensor);
@@ -56,9 +58,10 @@ void free_tensor(Tensor *tensor) {
     if (!tensor)
         return;
 
-    free_array(tensor->data);
-    free_backward_fn(tensor->backward_fn);
+    if (!tensor->is_view)
+        free_array(tensor->data);
 
+    free_backward_fn(tensor->backward_fn);
     free(tensor);
 }
 
@@ -273,4 +276,23 @@ ArrayVal item(const Tensor *tensor) {
     const ArrayVal *x = (ArrayVal *)get_array_data(data);
     ArrayVal value = x[0];
     return value;
+}
+
+Tensor *detach(const Tensor *tensor) {
+    Tensor *out = malloc(sizeof(Tensor));
+    if (!out)
+        RUNTIME_ERROR(TENSOR_INIT_FAILURE, "Failure to allocate tensor\n");
+
+    out->data = tensor->data;
+    out->grad = NULL;
+
+    out->backward_fn = NULL;
+    out->env = tensor->env;
+    out->requires_grad = false;
+    out->is_view = true;
+
+    if (out->env)
+        env_push(out->env, out);
+
+    return out;
 }
