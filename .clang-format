@@ -1,0 +1,9 @@
+AlignAfterOpenBracket: Align
+AlignConsecutiveAssignments: Consecutive
+AlignConsecutiveDeclarations: Consecutive
+AlignConsecutiveMacros: Consecutive
+AlignEscapedNewlines: Right
+AlignOperands: AlignAfterOperator
+AlignTrailingComments: true
+TabWidth: 4
+IndentWidth: 4
