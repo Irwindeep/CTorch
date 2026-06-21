@@ -2,9 +2,10 @@
 #include "random.h"
 
 #include <stdint.h>
+#include <stdlib.h>
 #include <time.h>
 
-PRNG *global_rng;
+PRNG       *global_rng;
 const char *DTypeNames[] = {
     "DTYPE_INT",
     "DTYPE_FLOAT",
@@ -20,3 +21,5 @@ void ManualSeed(uint64_t seed) {
 }
 
 void CTorchClose(void) { free_rng(global_rng); }
+
+void ct_exit(int status) { exit(status); }

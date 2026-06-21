@@ -16,21 +16,23 @@ void CTorchInit(void);
 void ManualSeed(uint64_t seed);
 void CTorchClose(void);
 
+void ct_exit(int status);
+
 #if defined(__GNUC__) || defined(__clang__)
 #define ScopedEnvironment __attribute__((cleanup(free_env))) Environment *
-#define ScopedOptimizer __attribute__((cleanup(free_optim))) Optimizer *
-#define ScopedModule __attribute__((cleanup(free_module))) Module *
+#define ScopedOptimizer   __attribute__((cleanup(free_optim))) Optimizer *
+#define ScopedModule      __attribute__((cleanup(free_module))) Module *
 #else
 #define ScopedEnvironment Environment *
-#define ScopedOptimizer Optimizer *
-#define ScoScopedModule Module *
+#define ScopedOptimizer   Optimizer *
+#define ScoScopedModule   Module *
 #endif
 
 #define REQUIRES_GRAD true
-#define NO_GRAD false
+#define NO_GRAD       false
 
 #define CREATE_GRAPH true
-#define NO_GRAPH false
+#define NO_GRAPH     false
 
 #define SHAPE(...)                                                             \
     (sizeof((size_t[]){__VA_ARGS__}) / sizeof(size_t)),                        \
