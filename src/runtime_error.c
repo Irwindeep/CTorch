@@ -65,15 +65,10 @@ void ct_runtime_error(int status_code, const char *error_msg_fmt, ...) {
     int callee_func_len = (int)strlen(ct_error_state.callee_func),
         buff_len        = (int)strlen(buff);
 
-    for (int i = 0; i < buff_len - callee_func_len; i++) {
-        bool matched = true;
-        for (int j = i; j < i + callee_func_len; j++) {
-            if (buff[j] != ct_error_state.callee_func[j - i])
-                matched = false;
-        }
-
-        if (matched) {
-            column = (int)i + 1;
+    for (int i = 0; i <= buff_len - callee_func_len; i++) {
+        if (memcmp(buff + i, ct_error_state.callee_func,
+                   (size_t)callee_func_len) == 0) {
+            column = i + 1;
             break;
         }
     }
@@ -103,5 +98,4 @@ void ct_runtime_error(int status_code, const char *error_msg_fmt, ...) {
 
     fclose(fptr);
     exit(status_code);
-    return;
 }
